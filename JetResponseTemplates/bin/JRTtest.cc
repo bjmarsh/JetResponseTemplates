@@ -82,6 +82,17 @@ int main(int argc, char* argv[])
                 //// ANALYSIS CODE /////
                 ////////////////////////
 
+                t.genjet_pt.clear();
+                t.genjet_eta.clear();
+                t.genjet_phi.clear();
+                t.recojet_pt.clear();
+                t.recojet_eta.clear();
+                t.recojet_phi.clear();
+
+                t.evt_run = (unsigned int)ev.getRun().run();
+                t.evt_lumi = (unsigned int)ev.getLuminosityBlock().luminosityBlock();
+                t.evt_event = (ULong64_t)ev.id().event();
+
                 cout << "\n EVENT: " << ievt << endl;
 
                 // Handle to the genjet collection
@@ -107,6 +118,8 @@ int main(int argc, char* argv[])
 
                     // fill the tree variables for later filling;
                     t.genjet_pt.push_back(jet_pt);
+                    t.genjet_eta.push_back(jet_eta);
+                    t.genjet_phi.push_back(jet_phi);
                     
                     vector<const GenParticle*> constituents = gj->getGenConstituents();
                     cout << "\tNumber constituents: " << constituents.size() << endl;
