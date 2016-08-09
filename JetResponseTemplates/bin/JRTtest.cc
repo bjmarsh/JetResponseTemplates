@@ -82,18 +82,13 @@ int main(int argc, char* argv[])
                 //// ANALYSIS CODE /////
                 ////////////////////////
 
-                t.genjet_pt.clear();
-                t.genjet_eta.clear();
-                t.genjet_phi.clear();
-                t.recojet_pt.clear();
-                t.recojet_eta.clear();
-                t.recojet_phi.clear();
+                t.Reset();
+                
+                t.evt_run   = (unsigned int) ev.getRun().run();
+                t.evt_lumi  = (unsigned int) ev.getLuminosityBlock().luminosityBlock();
+                t.evt_event = (ULong64_t)    ev.id().event();
 
-                t.evt_run = (unsigned int)ev.getRun().run();
-                t.evt_lumi = (unsigned int)ev.getLuminosityBlock().luminosityBlock();
-                t.evt_event = (ULong64_t)ev.id().event();
-
-                cout << "\n EVENT: " << ievt << endl;
+                // cout << "\n EVENT: " << ievt << endl;
 
                 // Handle to the genjet collection
                 edm::Handle<vector<GenJet> > genJets;
@@ -114,7 +109,9 @@ int main(int argc, char* argv[])
                     float jet_eta = gj->eta();
                     float jet_phi = gj->phi();
                     float jet_pt  = gj->pt();
-                    cout << "gen jet pt: " << jet_pt << ", eta: " << jet_eta << ", phi: " << jet_phi << endl;
+                    if(jet_pt < 10) continue;
+
+                    // cout << "gen jet pt: " << jet_pt << ", eta: " << jet_eta << ", phi: " << jet_phi << endl;
 
                     // fill the tree variables for later filling;
                     t.genjet_pt.push_back(jet_pt);
@@ -122,7 +119,7 @@ int main(int argc, char* argv[])
                     t.genjet_phi.push_back(jet_phi);
                     
                     vector<const GenParticle*> constituents = gj->getGenConstituents();
-                    cout << "\tNumber constituents: " << constituents.size() << endl;
+                    // cout << "\tNumber constituents: " << constituents.size() << endl;
 
                     vector<int> flavorMatchCands;
 
@@ -146,24 +143,30 @@ int main(int argc, char* argv[])
                             if((dr<0.1 && pt_ratio>0.3 && pt_ratio<2) && find(flavorMatchCands.begin(),flavorMatchCands.end(),idx)==flavorMatchCands.end())
                                 flavorMatchCands.push_back(idx);
                             
-                            cout << "\t";
-                            for(int i=0; i<level; i++) cout << "   ";
+                            // cout << "\t";
+                            // for(int i=0; i<level; i++) cout << "   ";
 
-                            cout << m->pdgId() << " (" << idx << ": " << m->pt() << ", " << m->eta() << ", " << m->phi() << ") \n";
+                            // cout << m->pdgId() << " (" << idx << ": " << m->pt() << ", " << m->eta() << ", " << m->phi() << ") \n";
                             while(m->pdgId() == m->mother()->pdgId())
                                   m = (GenParticle*) m->mother();
                             m = (GenParticle*) m->mother();
                             level++;
                         }
-                        cout << endl;                        
+                        // cout << endl;                        
                     } 
 
-                    cout << "\t***MATCH CANDIDATES***" << endl;
+                    // cout << "\t***MATCH CANDIDATES***" << endl;
                     for(unsigned int ic=0; ic<flavorMatchCands.size(); ic++){
                         const GenParticle *c = genps.at(flavorMatchCands.at(ic));
-                        cout << "\t" << c->pdgId() << " (" << flavorMatchCands.at(ic) << ": " << c->pt() << ", " << c->eta() << ", " << c->phi() << ")" << endl;
+                        // cout << "\t" << c->pdgId() << " (" << flavorMatchCands.at(ic) << ": " << c->pt() << ", " << c->eta() << ", " << c->phi() << ")" << endl;
                     }
+
+                    t.genjet_flavour_bennett.push_back(0);
+                    t.genjet_flavour_cmssw.push_back(0);
                 }
+
+                t.n_genjet = t.genjet_pt.size();
+                t.n_recojet = t.recojet_pt.size();
                 
                 t.Fill();
             }  

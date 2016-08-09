@@ -14,21 +14,24 @@ using namespace std;
 class JRTTree {
  public:
 
-    int evt_run;
-    int evt_lumi;
-    int evt_event;
-    vector<float> genjet_pt;
-    vector<float> genjet_eta;
-    vector<float> genjet_phi;
-    int n_genjet;
-    vector<float> recojet_pt;
-    vector<float> recojet_eta;
-    vector<float> recojet_phi;
-    int n_recojet;
+    int              evt_run;
+    int              evt_lumi;
+    int              evt_event;
+    vector<float>    genjet_pt;
+    vector<float>    genjet_eta;
+    vector<float>    genjet_phi;
+    int              n_genjet;
+    vector<float>    recojet_pt;
+    vector<float>    recojet_eta;
+    vector<float>    recojet_phi;
+    int              n_recojet;
+    vector<int>      genjet_flavour_bennett;
+    vector<int>      genjet_flavour_cmssw;
 
     JRTTree(TTree *tree=0);
-    void Init();
+    void Init(TTree *tree=0);
     void Fill();
+    void Reset();
     void Write(TDirectory *d);
 
  private:
@@ -45,6 +48,8 @@ class JRTTree {
     TBranch *b_recojet_eta;
     TBranch *b_recojet_phi;
     TBranch *b_n_recojet;
+    TBranch *b_genjet_flavour_bennett;
+    TBranch *b_genjet_flavour_cmssw;
 };
 
 #endif
