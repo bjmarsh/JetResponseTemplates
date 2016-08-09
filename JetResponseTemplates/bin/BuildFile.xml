@@ -9,6 +9,7 @@
 <use   name="PhysicsTools/Utilities"/>
 <use   name="PhysicsTools/SelectorUtils"/>
 <use   name="JetResponseTemplates/JetResponseTemplates"/>
+<use   name="CondFormats/JetMETObjects"/>
 <!-- <library name="JRTTree" file="../src/interface/JRTTree.cc"> -->
 <!--   <use name="root"/> -->
 <!-- </library> -->

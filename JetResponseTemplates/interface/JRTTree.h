@@ -17,13 +17,16 @@ class JRTTree {
     int              evt_run;
     int              evt_lumi;
     int              evt_event;
+    double           evt_fixgridfastjet_all_rho;
     vector<float>    genjet_pt;
     vector<float>    genjet_eta;
     vector<float>    genjet_phi;
     int              n_genjet;
+    vector<float>    recojet_pt_uncor;
     vector<float>    recojet_pt;
     vector<float>    recojet_eta;
     vector<float>    recojet_phi;
+    vector<float>    recojet_area;
     int              n_recojet;
     vector<int>      genjet_flavour_bennett;
     vector<int>      genjet_flavour_cmssw;
@@ -39,14 +42,17 @@ class JRTTree {
     
     TBranch *b_evt_run;
     TBranch *b_evt_lumi;
+    TBranch *b_evt_fixgridfastjet_all_rho;
     TBranch *b_evt_event;
     TBranch *b_genjet_pt;
     TBranch *b_genjet_eta;
     TBranch *b_genjet_phi;
     TBranch *b_n_genjet;
+    TBranch *b_recojet_pt_uncor;
     TBranch *b_recojet_pt;
     TBranch *b_recojet_eta;
     TBranch *b_recojet_phi;
+    TBranch *b_recojet_area;
     TBranch *b_n_recojet;
     TBranch *b_genjet_flavour_bennett;
     TBranch *b_genjet_flavour_cmssw;
