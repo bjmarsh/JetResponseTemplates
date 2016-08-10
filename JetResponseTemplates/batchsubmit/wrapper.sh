@@ -35,13 +35,43 @@ echo "[wrapper] attempting to build"
 eval `scramv1 runtime -sh`
 scramv1 b ProjectRename
 scram b
+eval `scramv1 runtime -sh`
+
+echo "PATH: " $PATH
+echo "LD_LIBRARY_PATH: " $LD_LIBRARY_PATH
+
+ls ../../../bin/slc6_amd64_gcc530
 
 cd test
-sed -i -- "s#PUTFILENAMEHERE#${FILE}#g" JRT_cfg.py
+sed -i -- "s#PUTFILENAMEHERE#${FILE}#g" condor_template_cfg.py
 
-echo "[wrapper] running: JRTbabymaker JRT_cfg.py"
+echo "[wrapper] running: JRTbabymaker condor_template_cfg.py"
 
-JRTbabymaker JRT_cfg.py
+JRTbabymaker condor_template_cfg.py
+
+if [ ! -f out.root ]; then
+    # if it doesn't exist, try again
+    echo "[wrapper] Output file not produced, trying once more..."
+    JRTbabymaker condor_template_cfg.py
+else
+    SIZE=`stat --printf="%s\n" out.root`
+    if [ "$SIZE" -lt 10000 ]; then
+        #file produced, but it is empty (usually xrootd error)
+        echo "[wrapper] Output does not seem to be valid, trying once more..."
+        rm out.root
+        JRTbabymaker condor_template_cfg.py
+    fi
+fi
+
+if [ -f out.root ]; then
+    SIZE=`stat --printf="%s\n" out.root`
+    if [ "$SIZE" -lt 10000 ]; then
+        echo "[wrapper] still invalid output. quitting."
+        rm out.root
+    fi
+else
+    echo "[wrapper] still no output produced. quitting."
+fi
 
 
 #

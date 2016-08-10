@@ -1,4 +1,4 @@
-#!/bin/bash
+B1;3409;0c#!/bin/bash
 
 while  ! voms-proxy-info -exist
 do echo "No Proxy found issuing \"voms-proxy-init -voms cms\""
