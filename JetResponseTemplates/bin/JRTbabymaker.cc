@@ -98,7 +98,7 @@ int main(int argc, char* argv[])
                 t.evt_lumi  = (unsigned int) ev.getLuminosityBlock().luminosityBlock();
                 t.evt_event = (ULong64_t)    ev.id().event();
 
-                cout << "\n EVENT: " << ievt << endl;
+                // cout << "\n EVENT: " << ievt << endl;
 
                 // Handle to the genjet collection
                 edm::Handle<vector<GenJet> > genJets;
@@ -130,7 +130,7 @@ int main(int argc, char* argv[])
                     float jet_pt  = gj->pt();
                     if(jet_pt < 10) continue;
 
-                    cout << "gen jet pt: " << jet_pt << ", eta: " << jet_eta << ", phi: " << jet_phi << endl;
+                    // cout << "gen jet pt: " << jet_pt << ", eta: " << jet_eta << ", phi: " << jet_phi << endl;
 
                     // fill the tree variables for later filling;
                     t.genjet_pt.push_back(jet_pt);
@@ -149,7 +149,6 @@ int main(int argc, char* argv[])
 
                 // set up JECs
                 string jecDir = string(getenv("CMSSW_BASE")) + "/src/JetResponseTemplates/JetResponseTemplates/jecs/";                    
-                cout << jecDir << endl;
                 JetCorrectorParameters *ResJetPar = new JetCorrectorParameters(jecDir+"Spring16_25nsV6_MC_L2L3Residual_AK4PFchs.txt"); 
                 JetCorrectorParameters *L3JetPar  = new JetCorrectorParameters(jecDir+"Spring16_25nsV6_MC_L3Absolute_AK4PFchs.txt");
                 JetCorrectorParameters *L2JetPar  = new JetCorrectorParameters(jecDir+"Spring16_25nsV6_MC_L2Relative_AK4PFchs.txt");
@@ -260,11 +259,11 @@ bool isCharmFlavoured(int id){
 // to determine the flavour. KEY: 5=bottom, 4=charm, 1=light-flavor, 0=leptonic
 int getFlavourBennett(vector<int> match_cands, vector<const GenParticle*> genps){
     int highpt_idx = -1;
-    cout << "CANDIDATES: ";
+    // cout << "CANDIDATES: ";
     bool foundB = false;
     bool foundC = false;
     for(unsigned int i=0; i<match_cands.size(); i++){
-        cout << genps.at(match_cands.at(i))->pdgId() << ", ";
+        // cout << genps.at(match_cands.at(i))->pdgId() << ", ";
         if(isBottomFlavoured(genps.at(match_cands.at(i))->pdgId()))
             foundB = true;
         if(isCharmFlavoured(genps.at(match_cands.at(i))->pdgId()))
@@ -272,9 +271,9 @@ int getFlavourBennett(vector<int> match_cands, vector<const GenParticle*> genps)
         if(highpt_idx==-1 || genps.at(highpt_idx)->pt() < genps.at(match_cands.at(i))->pt())
             highpt_idx = match_cands.at(i);
     }
-    if(highpt_idx != -1)
-        cout << "HIGH: " << genps.at(highpt_idx)->pdgId();
-    cout << endl;
+    // if(highpt_idx != -1)
+    //     cout << "HIGH: " << genps.at(highpt_idx)->pdgId();
+    // cout << endl;
                     
     int highpt_id;
     if(highpt_idx != -1){
@@ -368,7 +367,7 @@ int getFlavourCMSSW(vector<const GenParticle*> genps, float jet_pt, float jet_et
 
     if(match==-1) match = match_highpt;
 
-    cout << match << endl;
+    // cout << match << endl;
 
     if(match==5) return 5;  // b
     if(match==4) return 4;  // c

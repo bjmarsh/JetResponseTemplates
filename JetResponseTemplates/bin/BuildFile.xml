@@ -14,5 +14,5 @@
 <!--   <use name="root"/> -->
 <!-- </library> -->
 <environment>
-  <bin   file="JRTtest.cc"></bin>
+  <bin   file="JRTbabymaker.cc"></bin>
 </environment>
