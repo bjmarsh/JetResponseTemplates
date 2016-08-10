@@ -15,4 +15,5 @@
 <!-- </library> -->
 <environment>
   <bin   file="JRTbabymaker.cc"></bin>
+  <bin   file="JRTlooper.cc"></bin>
 </environment>

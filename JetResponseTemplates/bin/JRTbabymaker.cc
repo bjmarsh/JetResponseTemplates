@@ -17,6 +17,7 @@
 #include "DataFormats/HepMCCandidate/interface/GenParticle.h"
 #include "DataFormats/JetReco/interface/GenJet.h"
 #include "DataFormats/JetReco/interface/PFJet.h"
+#include "DataFormats/VertexReco/interface/Vertex.h"
 
 #include "SimDataFormats/JetMatching/interface/JetFlavour.h"
 #include "SimDataFormats/JetMatching/interface/JetFlavourMatching.h"
@@ -36,6 +37,7 @@ using namespace std;
 using reco::GenJet;
 using reco::GenParticle;
 using reco::PFJet;
+using reco::Vertex;
 
 vector<int> getCandidates(vector<const GenParticle*> constituents, vector<const GenParticle*> genps, float jet_pt, float jet_eta, float jet_phi);
 int getFlavourBennett(vector<int> match_cands, vector<const GenParticle*> genps);
@@ -65,6 +67,7 @@ int main(int argc, char* argv[])
     edm::InputTag recoJetsTag ("ak4PFJetsCHS");
     edm::InputTag genParticlesTag ("genParticles");
     edm::InputTag fixedGridRhoTag ("fixedGridRhoFastjetAll");
+    edm::InputTag vertexTag ("offlinePrimaryVertices");
 
     TFile *fout = new TFile(outputHandler_.file().c_str(),"RECREATE");
 
@@ -106,15 +109,20 @@ int main(int argc, char* argv[])
                 // Handle to the recojet collection
                 edm::Handle<vector<PFJet> > recoJets;
                 event.getByLabel(recoJetsTag, recoJets);
-                // Handle to the recojet collection
+                // Handle to the genparticle collection
                 edm::Handle<vector<GenParticle> > genParticles;
                 event.getByLabel(genParticlesTag, genParticles);
 
-                // Handle to the genparticle collection
+                // Handle to the fixedGrigRho
                 edm::Handle<double> fixedGridRhoHandle;
                 event.getByLabel(fixedGridRhoTag, fixedGridRhoHandle);
                 double fixedGridRho = *fixedGridRhoHandle.product();
                 t.evt_fixgridfastjet_all_rho = fixedGridRho;
+
+                // Handle to the vertex collection
+                edm::Handle< vector<Vertex> > vertexHandle;
+                event.getByLabel(vertexTag, vertexHandle);
+                t.evt_nvertices = vertexHandle.product()->size();
 
                 // fill a vector of genps for convenience
                 vector<const GenParticle*> genps;
@@ -133,9 +141,9 @@ int main(int argc, char* argv[])
                     // cout << "gen jet pt: " << jet_pt << ", eta: " << jet_eta << ", phi: " << jet_phi << endl;
 
                     // fill the tree variables for later filling;
-                    t.genjet_pt.push_back(jet_pt);
-                    t.genjet_eta.push_back(jet_eta);
-                    t.genjet_phi.push_back(jet_phi);
+                    t.genjet_pt->push_back(jet_pt);
+                    t.genjet_eta->push_back(jet_eta);
+                    t.genjet_phi->push_back(jet_phi);
                     
                     // do the flavour matching
                     vector<const GenParticle*> constituents = gj->getGenConstituents();
@@ -143,8 +151,8 @@ int main(int argc, char* argv[])
                     int flavourBennett = getFlavourBennett(match_cands, genps);
                     int flavourCMSSW = getFlavourCMSSW(genps, jet_pt, jet_eta, jet_phi);
 
-                    t.genjet_flavour_bennett.push_back(flavourBennett);
-                    t.genjet_flavour_cmssw.push_back(flavourCMSSW);
+                    t.genjet_flavour_bennett->push_back(flavourBennett);
+                    t.genjet_flavour_cmssw->push_back(flavourCMSSW);
                 }
 
                 // set up JECs
@@ -172,16 +180,16 @@ int main(int argc, char* argv[])
                     double correction = JetCorrector->getCorrection();
 
                     // fill the tree variables for later filling;
-                    t.recojet_pt.push_back(rj->pt() * correction);
-                    t.recojet_pt_uncor.push_back(rj->pt());
-                    t.recojet_eta.push_back(rj->eta());
-                    t.recojet_phi.push_back(rj->phi());
-                    t.recojet_area.push_back(rj->jetArea());
+                    t.recojet_pt->push_back(rj->pt() * correction);
+                    t.recojet_pt_uncor->push_back(rj->pt());
+                    t.recojet_eta->push_back(rj->eta());
+                    t.recojet_phi->push_back(rj->phi());
+                    t.recojet_area->push_back(rj->jetArea());
                     
                 }
 
-                t.n_genjet = t.genjet_pt.size();
-                t.n_recojet = t.recojet_pt.size();
+                t.n_genjet = t.genjet_pt->size();
+                t.n_recojet = t.recojet_pt->size();
                 
                 t.Fill();
             }  
