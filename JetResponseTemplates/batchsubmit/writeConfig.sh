@@ -1,4 +1,4 @@
-B1;3409;0c#!/bin/bash
+#!/bin/bash
 
 while  ! voms-proxy-info -exist
 do echo "No Proxy found issuing \"voms-proxy-init -voms cms\""
@@ -7,6 +7,7 @@ done
 
 AODSAMPLE=$1
 COPYDIRBASE=$2
+TAG=$3
 
 UNIVERSE="grid"
 #UNIVERSE="vanilla"
@@ -19,8 +20,8 @@ JOBLOGDIR="${PWD}/job_logs"
 PROXY=$(voms-proxy-info -path)
 USERNAME=$(whoami)
 
-LOGDIR="/data/tmp/$USER/condor_submit_logs/$COPYDIRBASE"
-OUTDIR="/data/tmp/$USER/condor_job_logs/$COPYDIRBASE"
+LOGDIR="/data/tmp/$USER/condor_submit_logs/$COPYDIRBASE_$TAG"
+OUTDIR="/data/tmp/$USER/condor_job_logs/$COPYDIRBASE_$TAG"
 LOG="${LOGDIR}/condor_`date "+%m_%d_%Y"`.log"
 OUT="${OUTDIR}/1e.\$(Cluster).\$(Process).out"
 ERR="${OUTDIR}/1e.\$(Cluster).\$(Process).err"
@@ -35,6 +36,12 @@ if [ ! -d "${OUTDIR}" ]; then
     mkdir -p ${OUT}
 fi
 
+CFGDIR=config_files/$TAG
+if [ ! -d "${CFGDIR}" ]; then
+    echo "[writeConfig] creating config file directory " ${CFGDIR}
+    mkdir -p ${CFGDIR}
+fi
+
 #
 # prepare input sandbox
 #
@@ -46,7 +53,7 @@ if [ ! -f input.tar.gz ]; then
     cd ${DIR}
 fi
 
-COPYDIR=/hadoop/cms/store/user/${USERNAME}/JRTbabies/${COPYDIRBASE}
+COPYDIR=/hadoop/cms/store/user/${USERNAME}/JRTbabies/${TAG}/${COPYDIRBASE}
 echo "[writeConfig] running on dataset ${DATADIR}"
 echo "[writeConfig] copying output to ${COPYDIR}"
 
@@ -75,7 +82,7 @@ output=${OUT}
 error =${ERR}
 notification=Never
 x509userproxy=${PROXY}
-" > config_files/condor_${COPYDIRBASE##*/}.cmd
+" > ${CFGDIR}/condor_${COPYDIRBASE##*/}.cmd
 
     #
     # now set the rest of the arguments 
@@ -88,7 +95,7 @@ executable=${EXE}
 transfer_executable=True
 arguments= `echo ${FILE##*/} | sed 's/\.root//g'` ${FILE} ${COPYDIR}
 queue
-" >> config_files/condor_${COPYDIRBASE##*/}.cmd
+" >> ${CFGDIR}/condor_${COPYDIRBASE##*/}.cmd
     done
 
 echo "[writeConfig] wrote condor_${COPYDIRBASE##*/}.cmd" 

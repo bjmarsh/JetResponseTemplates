@@ -1,4 +1,4 @@
-
-for FILE in `ls config_files/condor*resubmit.cmd`; do
+DIR=$1
+for FILE in `ls ${DIR}/condor*resubmit.cmd`; do
     condor_submit $FILE
 done
