@@ -16,4 +16,6 @@
 <environment>
   <bin   file="JRTbabymaker.cc"></bin>
   <bin   file="JRTlooper.cc"></bin>
+  <bin   file="JRTprintjets.cc"></bin>
+  <bin   file="JRTaddFits.cc"></bin>
 </environment>

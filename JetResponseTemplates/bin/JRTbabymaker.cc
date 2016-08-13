@@ -4,6 +4,7 @@
 #include <TROOT.h>
 #include <TFile.h>
 #include <TSystem.h>
+#include <TBenchmark.h>
 
 #include "DataFormats/FWLite/interface/Event.h"
 #include "DataFormats/Common/interface/Handle.h"
@@ -39,7 +40,7 @@ using reco::GenParticle;
 using reco::PFJet;
 using reco::Vertex;
 
-vector<int> getCandidates(vector<const GenParticle*> constituents, vector<const GenParticle*> genps, float jet_pt, float jet_eta, float jet_phi);
+vector<int> getCandidates(vector<const GenParticle*> constituents, vector<const GenParticle*> genps, float jet_pt, float jet_eta, float jet_phi, vector<const GenParticle*>* found);
 int getFlavourBennett(vector<int> match_cands, vector<const GenParticle*> genps);
 int getFlavourCMSSW(vector<const GenParticle*> genps, float jet_pt, float jet_eta, float jet_phi);
 
@@ -81,6 +82,9 @@ int main(int argc, char* argv[])
 
         TFile* inFile = TFile::Open(inputHandler_.files()[iFile].c_str());
         if( inFile ){
+
+            TBenchmark *bmark = new TBenchmark();
+            bmark->Start("benchmark");
 
             fwlite::Event ev(inFile);
             for(ev.toBegin(); !ev.atEnd(); ++ev, ++ievt){
@@ -147,12 +151,13 @@ int main(int argc, char* argv[])
                     
                     // do the flavour matching
                     vector<const GenParticle*> constituents = gj->getGenConstituents();
-                    vector<int> match_cands = getCandidates(constituents, genps, jet_pt, jet_eta, jet_phi);
+                    vector<const GenParticle*>* found = new vector<const GenParticle*>;
+                    vector<int> match_cands = getCandidates(constituents, genps, jet_pt, jet_eta, jet_phi, found);
                     int flavourBennett = getFlavourBennett(match_cands, genps);
-                    int flavourCMSSW = getFlavourCMSSW(genps, jet_pt, jet_eta, jet_phi);
+                    // int flavourCMSSW = getFlavourCMSSW(genps, jet_pt, jet_eta, jet_phi);
 
                     t.genjet_flavour_bennett->push_back(flavourBennett);
-                    t.genjet_flavour_cmssw->push_back(flavourCMSSW);
+                    // t.genjet_flavour_cmssw->push_back(flavourCMSSW);
                 }
 
                 // set up JECs
@@ -186,16 +191,20 @@ int main(int argc, char* argv[])
                     t.recojet_phi->push_back(rj->phi());
                     t.recojet_area->push_back(rj->jetArea());
                     
-                }
+                } // recojet loop
 
                 t.n_genjet = t.genjet_pt->size();
                 t.n_recojet = t.recojet_pt->size();
                 
                 t.Fill();
-            }  
+            }  // event loop
+
+            bmark->Stop("benchmark");
+            cout << "Event loop time: " << bmark->GetCpuTime("benchmark") << endl;
+            
             // close input file
             inFile->Close();
-        }
+        } // file loop
 
         // break loop if maximal number of events is reached:
         // this has to be done twice to stop the file loop as well
@@ -208,7 +217,7 @@ int main(int argc, char* argv[])
     return 0;
 }
 
-vector<int> getCandidates(vector<const GenParticle*> constituents, vector<const GenParticle*> genps, float jet_pt, float jet_eta, float jet_phi){
+vector<int> getCandidates(vector<const GenParticle*> constituents, vector<const GenParticle*> genps, float jet_pt, float jet_eta, float jet_phi, vector<const GenParticle*>* found){
 
     vector<int> cands;
 
@@ -217,15 +226,23 @@ vector<int> getCandidates(vector<const GenParticle*> constituents, vector<const 
 
     for(unsigned int i=0; i<constituents.size(); i++){
         const GenParticle *p = constituents.at(i);
+
+        if(find(found->begin(), found->end(), p) == found->end())
+            found->push_back(p);
+        else
+            continue;
+
         float dr = sqrt((jet_eta-p->eta())*(jet_eta-p->eta()) + (jet_phi-p->phi())*(jet_phi-p->phi()));
+
+        int idx = -1;
+        vector<const GenParticle*>::const_iterator loc = find(genps.begin(), genps.end(), p);
+        if(loc!= genps.end()) idx = loc - genps.begin();
+
 
         //ignore tops
         if(abs(p->pdgId())==6) continue;
 
         if(dr<dr_cut && p->pt()/jet_pt>pt_ratio_cut){
-            int idx = -1;
-            vector<const GenParticle*>::const_iterator found = find(genps.begin(), genps.end(), p);
-            if(found!= genps.end()) idx = found - genps.begin();
             cands.push_back(idx);
         }
 
@@ -233,7 +250,7 @@ vector<int> getCandidates(vector<const GenParticle*> constituents, vector<const 
             if(p->mother(im)->pdgId()==2212 && p->mother(im)->status()==4)
                 continue;
             vector<const GenParticle*> mother (1,(GenParticle*)p->mother(im));
-            vector<int> mcands = getCandidates(mother, genps, jet_pt, jet_eta, jet_phi);
+            vector<int> mcands = getCandidates(mother, genps, jet_pt, jet_eta, jet_phi, found);
             for(unsigned int j=0; j<mcands.size(); j++) cands.push_back(mcands.at(j));
         }            
     }
@@ -314,7 +331,7 @@ int getFlavourBennett(vector<int> match_cands, vector<const GenParticle*> genps)
 }
 
 // implementation of one of the official CMSSW jet-tagging algorithms.
-// Uses status=2 partons and status=3 leptons within a dr=0.3 jet cone
+// Uses status!=3 partons and status=1 leptons within a dr=0.3 jet cone
 // If we find any b's, call it a b-jet. Else if we find any c's, call it 
 // a c-jet. Else use the hightest pT parton/lepton to determine the flavour.
 // Return numbers are the same as the above method.
