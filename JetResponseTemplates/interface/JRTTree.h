@@ -19,6 +19,12 @@ class JRTTree {
     ULong64_t         evt_event;
     double            evt_fixgridfastjet_all_rho;
     double            evt_nvertices;
+    double            pfmet_pt;
+    double            pfmet_phi;
+    double            pfmet_pt_uncor;
+    double            pfmet_phi_uncor;
+    double            genmet_pt;
+    double            genmet_phi;
     vector<float>*    genjet_pt = 0;
     vector<float>*    genjet_eta = 0;
     vector<float>*    genjet_phi = 0;
@@ -47,6 +53,12 @@ class JRTTree {
     TBranch *b_evt_fixgridfastjet_all_rho = 0;
     TBranch *b_evt_nvertices = 0;
     TBranch *b_evt_event = 0;
+    TBranch *b_pfmet_pt = 0;
+    TBranch *b_pfmet_phi = 0;
+    TBranch *b_pfmet_pt_uncor = 0;
+    TBranch *b_pfmet_phi_uncor = 0;
+    TBranch *b_genmet_pt = 0;
+    TBranch *b_genmet_phi = 0;
     TBranch *b_genjet_pt = 0;
     TBranch *b_genjet_eta = 0;
     TBranch *b_genjet_phi = 0;

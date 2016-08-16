@@ -31,6 +31,12 @@ void JRTTree::Init(TTree *tree){
         b_evt_event     = this->tree->Branch("evt_event", &evt_event, "evt_event/l");
         b_evt_fixgridfastjet_all_rho = this->tree->Branch("evt_fixgridfastjet_all_rho", &evt_fixgridfastjet_all_rho);
         b_evt_nvertices = this->tree->Branch("evt_nvertices", &evt_nvertices);
+        b_pfmet_pt = this->tree->Branch("pfmet_pt", &pfmet_pt);
+        b_pfmet_phi = this->tree->Branch("pfmet_phi", &pfmet_phi);
+        b_pfmet_pt_uncor = this->tree->Branch("pfmet_pt_uncor", &pfmet_pt_uncor);
+        b_pfmet_phi_uncor = this->tree->Branch("pfmet_phi_uncor", &pfmet_phi_uncor);
+        b_genmet_pt = this->tree->Branch("genmet_pt", &genmet_pt);
+        b_genmet_phi = this->tree->Branch("genmet_phi", &genmet_phi);
         b_genjet_pt     = this->tree->Branch("genjet_pt", genjet_pt);
         b_genjet_eta    = this->tree->Branch("genjet_eta", genjet_eta);
         b_genjet_phi    = this->tree->Branch("genjet_phi", genjet_phi);
@@ -54,6 +60,12 @@ void JRTTree::Init(TTree *tree){
         this->tree->SetBranchAddress("evt_event", &evt_event, &b_evt_event);
         this->tree->SetBranchAddress("evt_fixgridfastjet_all_rho", &evt_fixgridfastjet_all_rho, &b_evt_fixgridfastjet_all_rho);
         this->tree->SetBranchAddress("evt_nvertices", &evt_nvertices, &b_evt_nvertices);
+        this->tree->SetBranchAddress("pfmet_pt", &pfmet_pt, &b_pfmet_pt);
+        this->tree->SetBranchAddress("pfmet_phi", &pfmet_phi, &b_pfmet_phi);
+        this->tree->SetBranchAddress("pfmet_pt_uncor", &pfmet_pt_uncor, &b_pfmet_pt_uncor);
+        this->tree->SetBranchAddress("pfmet_phi_uncor", &pfmet_phi_uncor, &b_pfmet_phi_uncor);
+        this->tree->SetBranchAddress("genmet_pt", &genmet_pt, &b_genmet_pt);
+        this->tree->SetBranchAddress("genmet_phi", &genmet_phi, &b_genmet_phi);
         this->tree->SetBranchAddress("genjet_pt", &genjet_pt, &b_genjet_pt);
         this->tree->SetBranchAddress("genjet_eta", &genjet_eta, &b_genjet_eta);
         this->tree->SetBranchAddress("genjet_phi", &genjet_phi, &b_genjet_phi);
@@ -79,6 +91,12 @@ void JRTTree::Reset(){
     evt_event = -1;
     evt_fixgridfastjet_all_rho = -1;
     evt_nvertices = -1;
+    pfmet_pt = -1;
+    pfmet_phi = -1;
+    pfmet_pt_uncor = -1;
+    pfmet_phi_uncor = -1;
+    genmet_pt = -1;
+    genmet_phi = -1;
     genjet_pt->clear();
     genjet_eta->clear();
     genjet_phi->clear();

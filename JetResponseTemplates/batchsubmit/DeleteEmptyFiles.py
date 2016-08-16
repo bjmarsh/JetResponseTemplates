@@ -1,7 +1,7 @@
 import os
 import glob
 
-base_dir = "/hadoop/cms/store/user/bemarsh/JRTbabies/v2"
+base_dir = "/hadoop/cms/store/user/bemarsh/JRTbabies/v3"
 
 dirs = glob.glob(os.path.join(base_dir,"qcd_pt*"))
 

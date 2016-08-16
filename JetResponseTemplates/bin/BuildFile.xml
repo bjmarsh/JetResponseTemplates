@@ -18,4 +18,5 @@
   <bin   file="JRTlooper.cc"></bin>
   <bin   file="JRTprintjets.cc"></bin>
   <bin   file="JRTaddFits.cc"></bin>
+  <bin   file="JRTsmeartest.cc"></bin>
 </environment>

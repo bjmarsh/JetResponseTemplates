@@ -19,6 +19,8 @@
 #include "DataFormats/JetReco/interface/GenJet.h"
 #include "DataFormats/JetReco/interface/PFJet.h"
 #include "DataFormats/VertexReco/interface/Vertex.h"
+#include "DataFormats/METReco/interface/GenMET.h"
+#include "DataFormats/METReco/interface/PFMET.h"
 
 #include "SimDataFormats/JetMatching/interface/JetFlavour.h"
 #include "SimDataFormats/JetMatching/interface/JetFlavourMatching.h"
@@ -39,6 +41,8 @@ using reco::GenJet;
 using reco::GenParticle;
 using reco::PFJet;
 using reco::Vertex;
+using reco::PFMET;
+using reco::GenMET;
 
 vector<int> getCandidates(vector<const GenParticle*> constituents, vector<const GenParticle*> genps, float jet_pt, float jet_eta, float jet_phi, vector<const GenParticle*>* found);
 int getFlavourBennett(vector<int> match_cands, vector<const GenParticle*> genps);
@@ -69,6 +73,8 @@ int main(int argc, char* argv[])
     edm::InputTag genParticlesTag ("genParticles");
     edm::InputTag fixedGridRhoTag ("fixedGridRhoFastjetAll");
     edm::InputTag vertexTag ("offlinePrimaryVertices");
+    edm::InputTag pfmetTag ("pfMet");
+    edm::InputTag genmetTag ("genMetTrue");
 
     TFile *fout = new TFile(outputHandler_.file().c_str(),"RECREATE");
 
@@ -128,6 +134,20 @@ int main(int argc, char* argv[])
                 event.getByLabel(vertexTag, vertexHandle);
                 t.evt_nvertices = vertexHandle.product()->size();
 
+                // Handle to the PFMET
+                edm::Handle< vector<PFMET> > pfmetHandle;
+                event.getByLabel(pfmetTag, pfmetHandle);
+                PFMET pfmet = pfmetHandle.product()->at(0);
+                double pfmet_pt = pfmet.pt();
+                double pfmet_phi = pfmet.phi();
+
+                // Handle to the genmet
+                edm::Handle< vector<GenMET> > genmetHandle;
+                event.getByLabel(genmetTag, genmetHandle);
+                GenMET genmet = genmetHandle.product()->at(0);
+                double genmet_pt = genmet.pt();
+                double genmet_phi = genmet.phi();
+
                 // fill a vector of genps for convenience
                 vector<const GenParticle*> genps;
                 for(vector<GenParticle>::const_iterator p = genParticles->begin(); p!=genParticles -> end(); ++p){
@@ -154,10 +174,10 @@ int main(int argc, char* argv[])
                     vector<const GenParticle*>* found = new vector<const GenParticle*>;
                     vector<int> match_cands = getCandidates(constituents, genps, jet_pt, jet_eta, jet_phi, found);
                     int flavourBennett = getFlavourBennett(match_cands, genps);
-                    // int flavourCMSSW = getFlavourCMSSW(genps, jet_pt, jet_eta, jet_phi);
+                    int flavourCMSSW = getFlavourCMSSW(genps, jet_pt, jet_eta, jet_phi);
 
                     t.genjet_flavour_bennett->push_back(flavourBennett);
-                    // t.genjet_flavour_cmssw->push_back(flavourCMSSW);
+                    t.genjet_flavour_cmssw->push_back(flavourCMSSW);
                 }
 
                 // set up JECs
@@ -174,6 +194,10 @@ int main(int argc, char* argv[])
                 
                 FactorizedJetCorrector *JetCorrector = new FactorizedJetCorrector(vPar);
 
+                // get the x and y components of pfmet, so we can correct when we do JECs
+                double pfmet_x = pfmet_pt * cos(pfmet_phi);
+                double pfmet_y = pfmet_pt * sin(pfmet_phi);
+
                 // loop recojet collection
                 for(vector<PFJet>::const_iterator rj=recoJets->begin(); rj!=recoJets->end(); ++rj){
 
@@ -182,19 +206,38 @@ int main(int argc, char* argv[])
                     JetCorrector->setJetEta(rj->eta());
                     JetCorrector->setJetA(rj->jetArea());
 
-                    double correction = JetCorrector->getCorrection();
+                    vector<float> corrs = JetCorrector->getSubCorrections();
+                    float correction = corrs.at(corrs.size()-1);
+                    // float corr_l1 = corrs.at(0);
+                    
+                    double pt = rj->pt();
+                    double pt_cor = rj->pt() * correction;
+                    double phi = rj->phi();
+                    
+                    // add on the original pt and subtract back off the corrected to get corrected pfmet;
+                    pfmet_x += pt * cos(phi);
+                    pfmet_y += pt * sin(phi);
+                    pfmet_x -= pt_cor * cos(phi);
+                    pfmet_y -= pt_cor * sin(phi);
 
                     // fill the tree variables for later filling;
-                    t.recojet_pt->push_back(rj->pt() * correction);
-                    t.recojet_pt_uncor->push_back(rj->pt());
+                    t.recojet_pt->push_back(pt_cor);
+                    t.recojet_pt_uncor->push_back(pt);
                     t.recojet_eta->push_back(rj->eta());
-                    t.recojet_phi->push_back(rj->phi());
+                    t.recojet_phi->push_back(phi);
                     t.recojet_area->push_back(rj->jetArea());
                     
                 } // recojet loop
 
                 t.n_genjet = t.genjet_pt->size();
                 t.n_recojet = t.recojet_pt->size();
+
+                t.pfmet_pt = sqrt(pfmet_x*pfmet_x + pfmet_y*pfmet_y);
+                t.pfmet_phi = atan2(pfmet_y, pfmet_x);
+                t.pfmet_pt_uncor = pfmet_pt;
+                t.pfmet_phi_uncor = pfmet_phi;
+                t.genmet_pt = genmet_pt;
+                t.genmet_phi = genmet_phi;
                 
                 t.Fill();
             }  // event loop
@@ -222,7 +265,7 @@ vector<int> getCandidates(vector<const GenParticle*> constituents, vector<const 
     vector<int> cands;
 
     float dr_cut = 0.1;
-    float pt_ratio_cut = 0.3;
+    float pt_ratio_cut = 0.0;
 
     for(unsigned int i=0; i<constituents.size(); i++){
         const GenParticle *p = constituents.at(i);

@@ -75,38 +75,29 @@ int main(int argc, char* argv[])
             // TString func = "[0]*exp(-0.5*((x-[1])/[2])*((x-[1])/[2])) + [3]*exp(-0.5*((x-[4])/[5])*((x-[4])/[5]))";
             TString func = "[0]*exp(-0.5*((x-[1])/[2])*((x-[1])/[2])) + [3]*exp(-0.5*((x-[4])/[5])*((x-[4])/[5])) + [6]*exp(-0.5*((x-[7])/[8])*((x-[7])/[8]))";
             
-            h = JRTs_b->at(ipt)->at(ieta);
-            fname = Form("fit_pt%d_eta%d_bjet",ipt,ieta);
-            gDirectory->Delete(fname+";*");
-            f = new TF1(fname, func, 0.0, 3.0);
-            SetInitialParameters(h, f);
-            if(h->GetEntries() > 0){
-                h->Fit(f,"QNR","goff");
-                f->Write();
-            }             
-            delete f;
-            
-            h = JRTs_a->at(ipt)->at(ieta);
-            fname = Form("fit_pt%d_eta%d_alljet",ipt,ieta);
-            gDirectory->Delete(fname+";*");
-            f = new TF1(fname, func, 0.0, 3.0);
-            SetInitialParameters(h, f);
-            if(h->GetEntries() > 0){
-                h->Fit(f,"QNR","goff");
-                f->Write();
-            }             
-            delete f;
-            
-            h = JRTs_l->at(ipt)->at(ieta);
-            fname = Form("fit_pt%d_eta%d_nonbjet",ipt,ieta);
-            gDirectory->Delete(fname+";*");
-            f = new TF1(fname, func, 0.0, 3.0);
-            SetInitialParameters(h, f);
-            if(h->GetEntries() > 0){
-                h->Fit(f,"QNR","goff");
-                f->Write();
-            }             
-            delete f;
+            string jetregs[] = {"bjet","nonbjet","alljet"};
+            vector< vector<TH1D*>* >* histvecs[] = {JRTs_b, JRTs_l, JRTs_a};
+
+            for(int ij=0; ij<3; ij++){
+                h = histvecs[ij]->at(ipt)->at(ieta);
+                if(h->GetEntries()==0)
+                    continue;
+                
+                for(int ibin=1; ibin <= h->GetNbinsX(); ibin++){
+                    if(h->GetBinContent(ibin) == 0){
+                        h->SetBinContent(ibin,0.0000001);
+                        h->SetBinError(ibin,0.001);
+                    }
+                }
+
+                fname = Form("fit_pt%d_eta%d_%s",ipt,ieta, jetregs[ij].c_str());
+                gDirectory->Delete(fname+";*");
+                f = new TF1(fname, func, 0.0, 3.0);
+                SetInitialParameters(h, f);
+                    h->Fit(f,"QNR","goff");
+                    f->Write();
+                delete f;
+            }
 
         }
     }    
