@@ -175,6 +175,7 @@ int main(int argc, char* argv[])
                     vector<int> match_cands = getCandidates(constituents, genps, jet_pt, jet_eta, jet_phi, found);
                     int flavourBennett = getFlavourBennett(match_cands, genps);
                     int flavourCMSSW = getFlavourCMSSW(genps, jet_pt, jet_eta, jet_phi);
+                    delete found;
 
                     t.genjet_flavour_bennett->push_back(flavourBennett);
                     t.genjet_flavour_cmssw->push_back(flavourCMSSW);
@@ -210,24 +211,63 @@ int main(int argc, char* argv[])
                     float correction = corrs.at(corrs.size()-1);
                     // float corr_l1 = corrs.at(0);
                     
-                    double pt = rj->pt();
-                    double pt_cor = rj->pt() * correction;
-                    double phi = rj->phi();
-                    
+                    float pt = rj->pt();
+                    float pt_cor = rj->pt() * correction;
+                    float phi = rj->phi();
+                    float eta = rj->eta();
+
                     // add on the original pt and subtract back off the corrected to get corrected pfmet;
                     pfmet_x += pt * cos(phi);
                     pfmet_y += pt * sin(phi);
                     pfmet_x -= pt_cor * cos(phi);
                     pfmet_y -= pt_cor * sin(phi);
 
+                    float energy = rj->p4().energy();
+                    float chf = rj->chargedHadronEnergy()/energy;
+                    float nhf = rj->neutralHadronEnergy()/energy;
+                    float cef = rj->chargedEmEnergy()/energy;
+                    float nef = rj->neutralEmEnergy()/energy;
+                    float cm = rj->chargedMultiplicity();
+                    float nm = rj->neutralMultiplicity();
+
+                    // do jet ID
+                    int isLoosePFJet = true;
+                    int isTightPFJet = true;
+                    if(eta < 3.0){
+                        if(nhf >= 0.99) isLoosePFJet = false;
+                        if(nef >= 0.99) isLoosePFJet = false;
+                        if(cm + nm < 2) isLoosePFJet = false;
+                        if(nef >= 0.9) isTightPFJet = false;
+                        if(nhf >= 0.9) isTightPFJet = false;
+                        if(eta < 2.4){
+                            if(!(cm > 0))  isLoosePFJet = false;
+                            if(!(chf > 0)) isLoosePFJet = false;
+                            if(!(cef < 0.99)) isLoosePFJet = false;
+                        }
+                    }else{
+                        if(!(nef < 0.9)) isLoosePFJet = false;
+                        if(!(nm > 10)) isLoosePFJet = false;
+                    }
+                    isTightPFJet = isTightPFJet && isLoosePFJet;
+                        
+
                     // fill the tree variables for later filling;
                     t.recojet_pt->push_back(pt_cor);
                     t.recojet_pt_uncor->push_back(pt);
-                    t.recojet_eta->push_back(rj->eta());
+                    t.recojet_eta->push_back(eta);
                     t.recojet_phi->push_back(phi);
                     t.recojet_area->push_back(rj->jetArea());
+                    t.recojet_isLoosePFJet->push_back(isLoosePFJet);
+                    t.recojet_isTightPFJet->push_back(isTightPFJet);
                     
                 } // recojet loop
+
+                //clean up
+                delete ResJetPar;
+                delete L3JetPar;
+                delete L2JetPar;
+                delete L1JetPar;
+                delete JetCorrector;
 
                 t.n_genjet = t.genjet_pt->size();
                 t.n_recojet = t.recojet_pt->size();
@@ -244,7 +284,8 @@ int main(int argc, char* argv[])
 
             bmark->Stop("benchmark");
             cout << "Event loop time: " << bmark->GetCpuTime("benchmark") << endl;
-            
+            delete bmark;
+
             // close input file
             inFile->Close();
         } // file loop
@@ -256,8 +297,17 @@ int main(int argc, char* argv[])
 
     t.Write(fout);
     fout->Close();
-    
+    delete fout;
+
     return 0;
+}
+
+float DeltaR(float eta1, float phi1, float eta2, float phi2){
+    float dphi = fabs(phi1-phi2);
+    const float PI = 3.14159265359;
+    if(dphi > PI)
+        dphi = 2*PI - dphi;
+    return sqrt((eta1-eta2)*(eta1-eta2) + dphi*dphi);
 }
 
 vector<int> getCandidates(vector<const GenParticle*> constituents, vector<const GenParticle*> genps, float jet_pt, float jet_eta, float jet_phi, vector<const GenParticle*>* found){
@@ -275,7 +325,7 @@ vector<int> getCandidates(vector<const GenParticle*> constituents, vector<const 
         else
             continue;
 
-        float dr = sqrt((jet_eta-p->eta())*(jet_eta-p->eta()) + (jet_phi-p->phi())*(jet_phi-p->phi()));
+        float dr = DeltaR(jet_eta, jet_phi, p->eta(), p->phi());
 
         int idx = -1;
         vector<const GenParticle*>::const_iterator loc = find(genps.begin(), genps.end(), p);
@@ -422,7 +472,7 @@ int getFlavourCMSSW(vector<const GenParticle*> genps, float jet_pt, float jet_et
     for(unsigned int ip=0; ip<partons.size(); ip++){
         const GenParticle *p = partons.at(ip);
         int id = abs(p->pdgId());
-        float dr = sqrt((jet_eta-p->eta())*(jet_eta-p->eta()) + (jet_phi-p->phi())*(jet_phi-p->phi()));
+        float dr = DeltaR(jet_eta, jet_phi, p->eta(), p->phi());
         if(dr < dr_cut){
             if(match==-1 && id==4) match = 4;
             if(             id==5) match = 5;

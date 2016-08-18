@@ -34,6 +34,8 @@ class JRTTree {
     vector<float>*    recojet_eta = 0;
     vector<float>*    recojet_phi = 0;
     vector<float>*    recojet_area = 0;
+    vector<int>*      recojet_isLoosePFJet = 0;
+    vector<int>*      recojet_isTightPFJet = 0;
     int               n_recojet;
     vector<int>*      genjet_flavour_bennett = 0;
     vector<int>*      genjet_flavour_cmssw = 0;
@@ -68,6 +70,8 @@ class JRTTree {
     TBranch *b_recojet_eta = 0;
     TBranch *b_recojet_phi = 0;
     TBranch *b_recojet_area = 0;
+    TBranch *b_recojet_isLoosePFJet = 0;
+    TBranch *b_recojet_isTightPFJet = 0;
     TBranch *b_n_recojet = 0;
     TBranch *b_genjet_flavour_bennett = 0;
     TBranch *b_genjet_flavour_cmssw = 0;
