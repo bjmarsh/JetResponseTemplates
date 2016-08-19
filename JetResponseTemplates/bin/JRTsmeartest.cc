@@ -14,30 +14,40 @@
 #include "JetResponseTemplates/JetResponseTemplates/interface/JRTreader.h"
 #include "JetResponseTemplates/JetResponseTemplates/interface/JRTTree.h"
 
-#define NSMEARS 1
+#define NSMEARS 100
+#define EVTRED 10
 
 using namespace std;
 
-void computeJetVars(vector<float> &pt, vector<float> &eta, vector<float> &phi, float met_pt, float met_phi, float *results);
+void computeJetVars(string jettype, float met_pt, float met_phi, float *results);
+
+float metCut = 10;
+bool doGenJetMatching = true;
+
+JRTTree t;
+vector<float> smearjet_pt;
+vector<float> smearjet_eta;
+vector<float> smearjet_phi;
 
 int main(int argc, char* argv[]) 
 {
 
-    if(argc<3){
-        cout << "USAGE: JRTsmeartest <template file> <files to run over>" << endl;
+    if(argc<5){
+        cout << "USAGE: JRTsmeartest <template file> <input dir> <output dir> <sample>" << endl;
         return 1;
     }
 
     //setup chain
     TChain *chain = new TChain("Events");
 
-    for(int i=2; i<argc; i++)
-        chain->Add(argv[i]);
+    chain->Add(Form("%s/%s*.root",argv[2],argv[4]));
 
     // open output file and initialize histograms
-    TFile *fout = new TFile("smeartest.root", "RECREATE");
+    TFile *fout = new TFile(Form("%s/%s.root",argv[3],argv[4]), "RECREATE");
 
     string tags[] = {"reco","gen","gensmear"};
+    vector<TH1D*> h_nJet30_vec;
+    vector<TH1D*> h_lowmet_vec;
     vector<TH1D*> h_met_vec;
     vector<TH1D*> h_ht_vec;
     vector<TH1D*> h_mht_vec;
@@ -46,10 +56,12 @@ int main(int argc, char* argv[])
     vector<TH1D*> h_j2pt_vec;
     vector<TH1D*> h_deltaPhiMin_vec;
     for(int i=0; i<3; i++){
+        h_nJet30_vec.push_back(new TH1D(("h_nJet30_"+tags[i]).c_str(),";nJet30",10,0,10));
+        h_lowmet_vec.push_back(new TH1D(("h_lowmet_"+tags[i]).c_str(),";E_{T}^{miss} [GeV]",100,0,150));
         h_met_vec.push_back(new TH1D(("h_met_"+tags[i]).c_str(),";E_{T}^{miss} [GeV]",150,0,1500));
         h_ht_vec.push_back(new TH1D(("h_ht_"+tags[i]).c_str(), ";H_{T} [GeV]",150,0,1500));
         h_mht_vec.push_back(new TH1D(("h_mht_"+tags[i]).c_str(), ";H_{T}^{miss} [GeV]",150,0,1500));
-        h_diffMetMhtOverMet_vec.push_back(new TH1D(("h_diffMetMhtOverMet_"+tags[i]).c_str(), ";diffMetMhtOverMet",150,0,1500));
+        h_diffMetMhtOverMet_vec.push_back(new TH1D(("h_diffMetMhtOverMet_"+tags[i]).c_str(), ";diffMetMhtOverMet",150,0,10));
         h_j1pt_vec.push_back(new TH1D(("h_j1pt_"+tags[i]).c_str(), ";p_{T}(jet1) [GeV]",150,0,1500));
         h_j2pt_vec.push_back(new TH1D(("h_j2pt_"+tags[i]).c_str(), ";p_{T}(jet2) [GeV]",150,0,1500));
         h_deltaPhiMin_vec.push_back(new TH1D(("h_deltaPhiMin_"+tags[i]).c_str(), ";deltaPhiMin",150,0,3.141593));
@@ -63,11 +75,11 @@ int main(int argc, char* argv[])
 
     cout << "Processing " << nEventsChain << " events." << endl;
 
-    JRTTree t;
-
     // reader to get random values from templates.
     JRTreader reader;
+    reader.UseRawHistograms(false);
     reader.Init(argv[1]);
+
 
     while ( (currentFile = (TFile*)fileIter.Next()) ) {
         
@@ -82,19 +94,25 @@ int main(int argc, char* argv[])
         // branch for scale1fb is not in JRTTree
         float scale;
         tree->SetBranchAddress("evt_scale1fb", &scale);
+        
+        int nBadEvents = 0;
 
         unsigned int nEventsTree = tree->GetEntriesFast();
+        cout << " Events in tree: " << nEventsTree << endl;
         unsigned int maxEvents = nEventsTree;
-        // maxEvents = nEventsTree / 100;
+        maxEvents = nEventsTree / EVTRED;
+        // maxEvents = 2;
         for( unsigned int event = 0; event < maxEvents; ++event) {
     
-            if(event%100000 == 0)
-                cout << "Processing event: " << event << endl;
+            // if(event%1 == 0)
+            //     cout << "Processing event: " << event << endl;
 
             // Get Event Content
             Long64_t tentry = tree->LoadTree(event);
             t.GetEntry(tentry);
             ++nEventsTotal;
+
+            scale *= EVTRED;
 
             //ANALYSIS CODE HERE
             
@@ -104,7 +122,7 @@ int main(int argc, char* argv[])
             float met_sub_y = t.pfmet_pt * sin(t.pfmet_phi);
             
             float jetVars[7]; //will hold ht, mht, diffMetMht/met
-            
+
             // subtract reco jets from met to recompute using smeared jets
             for(int ir=0; ir<t.n_recojet; ir++){
                 float pt = t.recojet_pt->at(ir);
@@ -118,8 +136,11 @@ int main(int argc, char* argv[])
             }// recojet loop
 
             // COMPUTE RECOJET QUANTITIES
-            computeJetVars(*t.recojet_pt, *t.recojet_eta, *t.recojet_phi, t.pfmet_pt, t.pfmet_phi, jetVars);
-            if(jetVars[0] >= 2){
+            computeJetVars("reco", t.pfmet_pt, t.pfmet_phi, jetVars);
+            // computeJetVars(t.recojet_pt, t.recojet_eta, t.recojet_phi, NULL, t.pfmet_pt, t.pfmet_phi, jetVars);
+            h_nJet30_vec.at(0)->Fill(jetVars[0], scale);
+            if(jetVars[0] >= 2 && t.pfmet_pt>metCut){
+                h_lowmet_vec.at(0)->Fill(t.pfmet_pt, scale);
                 h_met_vec.at(0)->Fill(t.pfmet_pt, scale);
                 h_ht_vec.at(0)->Fill(jetVars[1], scale);
                 h_mht_vec.at(0)->Fill(jetVars[2], scale);
@@ -129,10 +150,11 @@ int main(int argc, char* argv[])
                 h_deltaPhiMin_vec.at(0)->Fill(jetVars[6], scale);
             }
 
-
             // COMPUTE GENJET QUANTITIES //
-            computeJetVars(*t.genjet_pt, *t.genjet_eta, *t.genjet_phi, t.genmet_pt, t.genmet_phi, jetVars);
+            computeJetVars("gen", t.genmet_pt, t.genmet_phi, jetVars);
+            h_nJet30_vec.at(1)->Fill(jetVars[0], scale);
             if(jetVars[0] >= 2){
+                h_lowmet_vec.at(1)->Fill(t.genmet_pt, scale);
                 h_met_vec.at(1)->Fill(t.genmet_pt, scale);
                 h_ht_vec.at(1)->Fill(jetVars[1], scale);
                 h_mht_vec.at(1)->Fill(jetVars[2], scale);
@@ -142,10 +164,6 @@ int main(int argc, char* argv[])
                 h_deltaPhiMin_vec.at(1)->Fill(jetVars[6], scale);
             }
 
-            //vectors to store kinematics of smeared jets
-            vector<float> smearjet_pt;
-            vector<float> smearjet_eta;
-            vector<float> smearjet_phi;
 
             // SMEAR JETS AND COMPUTE QUANTITIES
             for(int ismear=0; ismear < NSMEARS; ismear++){
@@ -153,12 +171,20 @@ int main(int argc, char* argv[])
                 smearjet_eta.clear();
                 smearjet_phi.clear();
 
+                // weird corrupt babies causing crashes
+                if(t.genjet_flavour_cmssw->size() != t.genjet_pt->size()){
+                    nBadEvents++;
+                    break;
+                }
+
                 for(int ig=0; ig<t.n_genjet; ig++){
-                    int flavour = t.genjet_flavour_bennett->at(ig);
+                    int flavour = t.genjet_flavour_cmssw->at(ig);
 
                     //either a leptonic or unidentifiable jet
-                    if(flavour < 1)
+                    if(flavour < 1){
                         continue;
+                        // flavour = 1;
+                    }
 
                     bool isBjet = 0;
                     if(flavour==5)
@@ -175,6 +201,7 @@ int main(int argc, char* argv[])
 
                 }//genjet loop
 
+
                 //recompute met with smeared jets
                 float met_smear_x = met_sub_x;
                 float met_smear_y = met_sub_y;
@@ -188,31 +215,39 @@ int main(int argc, char* argv[])
                     }
                     
                 }// loop over smeared jets
+
                 
                 float met_smear = sqrt(met_smear_x*met_smear_x + met_smear_y*met_smear_y);
                 float met_smear_phi = atan2(met_smear_y, met_smear_x);
-                // COMPUTE GENJET QUANTITIES //
-                computeJetVars(smearjet_pt, smearjet_eta, smearjet_phi, met_smear, met_smear_phi, jetVars);
-                if(jetVars[0] >= 2){
-                    h_met_vec.at(2)->Fill(met_smear, scale);
-                    h_ht_vec.at(2)->Fill(jetVars[1], scale);
-                    h_mht_vec.at(2)->Fill(jetVars[2], scale);
-                    h_diffMetMhtOverMet_vec.at(2)->Fill(jetVars[3], scale);
-                    h_j1pt_vec.at(2)->Fill(jetVars[4], scale);
-                    h_j2pt_vec.at(2)->Fill(jetVars[5], scale);
-                    h_deltaPhiMin_vec.at(2)->Fill(jetVars[6], scale);
+                // COMPUTE SMEARJET QUANTITIES //
+                computeJetVars("smear", met_smear, met_smear_phi, jetVars);
+                h_nJet30_vec.at(2)->Fill(jetVars[0], scale/NSMEARS);
+                if(jetVars[0] >= 2 && met_smear>metCut){
+                    h_lowmet_vec.at(2)->Fill(met_smear, scale/NSMEARS);
+                    h_met_vec.at(2)->Fill(met_smear, scale/NSMEARS);
+                    h_ht_vec.at(2)->Fill(jetVars[1], scale/NSMEARS);
+                    h_mht_vec.at(2)->Fill(jetVars[2], scale/NSMEARS);
+                    h_diffMetMhtOverMet_vec.at(2)->Fill(jetVars[3], scale/NSMEARS);
+                    h_j1pt_vec.at(2)->Fill(jetVars[4], scale/NSMEARS);
+                    h_j2pt_vec.at(2)->Fill(jetVars[5], scale/NSMEARS);
+                    h_deltaPhiMin_vec.at(2)->Fill(jetVars[6], scale/NSMEARS);
                 }
 
             }// smearing loop
 
 
         }//event loop
+        
+        cout << " nBadEvents: " << nBadEvents << endl;
+
     }//file loop
 
     fout->cd();
     for(int i=0; i<3; i++){
         TDirectory *d = fout->mkdir(tags[i].c_str());
         d->cd();
+        h_nJet30_vec.at(i)->Write();
+        h_lowmet_vec.at(i)->Write();
         h_met_vec.at(i)->Write();
         h_ht_vec.at(i)->Write();
         h_mht_vec.at(i)->Write();
@@ -252,9 +287,52 @@ float DeltaPhi(float phi1, float phi2){
     return dphi;
 }
 
+float DeltaR(float eta1, float phi1, float eta2, float phi2){
+    float dphi = fabs(phi1-phi2);
+    const float PI = 3.14159265359;
+    if(dphi > PI)
+        dphi = 2*PI - dphi;
+    return sqrt((eta1-eta2)*(eta1-eta2) + dphi*dphi);
+}
+
+float overlapsGenJet(float eta, float phi){
+    
+    for(int i=0; i<t.n_genjet; i++){
+        if(DeltaR(eta, phi, t.genjet_eta->at(i), t.genjet_phi->at(i)) < 0.3)
+            return true;
+    }
+    return false;
+
+}
+
 // compute nJet30, ht, mht, diffMetMht/met, jet1_pt, jet2_pt, deltaPhiMin
-void computeJetVars(vector<float> &pt, vector<float> &eta, vector<float> &phi, float met_pt, float met_phi, float *results){
-    int njets = pt.size();
+void computeJetVars(string jettype, float met_pt, float met_phi, float *results){
+    vector<float> *pt = NULL;
+    vector<float> *eta = NULL;
+    vector<float> *phi = NULL;
+    vector<int> *jetID = NULL;
+
+    if(jettype=="reco"){
+        pt = t.recojet_pt;
+        eta = t.recojet_eta;
+        phi = t.recojet_phi;
+        jetID = t.recojet_isLoosePFJet;
+    }
+    if(jettype=="gen"){
+        pt = t.genjet_pt;
+        eta = t.genjet_eta;
+        phi = t.genjet_phi;
+        jetID = NULL;
+    }
+    if(jettype=="smear"){
+        pt = &smearjet_pt;
+        eta = &smearjet_eta;
+        phi = &smearjet_phi;
+        jetID = NULL;
+    }
+
+
+    int njets = pt->size();
 
     float ht=0;
     float mht_x = 0;
@@ -265,14 +343,25 @@ void computeJetVars(vector<float> &pt, vector<float> &eta, vector<float> &phi, f
 
     vector< pair<float,float> > ptphi;
     int nJet30 = 0;
+    int nJet30FailId = 0;
 
     for(int ij=0; ij<njets; ij++){
-        if(pt.at(ij) > 30 && eta.at(ij) < 2.5){
-            ht += pt.at(ij);
-            mht_x -= pt.at(ij)*cos(phi.at(ij));
-            mht_y -= pt.at(ij)*sin(phi.at(ij));
-            ptphi.push_back(pair<float,float> (pt.at(ij), phi.at(ij)));
+        if(pt->at(ij) > 30 && eta->at(ij) < 2.5){
+            if(jettype=="reco" && jetID->at(ij)==0){
+                nJet30FailId++;
+                continue;                
+            }
+
+            if(jettype=="reco" && doGenJetMatching && !overlapsGenJet(eta->at(ij),phi->at(ij)))
+                continue;
+
+            ht += pt->at(ij);
+            mht_x -= pt->at(ij)*cos(phi->at(ij));
+            mht_y -= pt->at(ij)*sin(phi->at(ij));
+            ptphi.push_back(pair<float,float> (pt->at(ij), phi->at(ij)));
             nJet30++;
+
+
         }
     }
 
@@ -285,6 +374,8 @@ void computeJetVars(vector<float> &pt, vector<float> &eta, vector<float> &phi, f
     results[1] = ht;
     results[2] = mht;
     results[3] = diffMetMht/met_pt;
+    results[4] = 0;
+    results[5] = 0;    
     if(nJet30 > 0)
         results[4] = ptphi.at(0).first;
     if(nJet30 > 1)
@@ -294,5 +385,8 @@ void computeJetVars(vector<float> &pt, vector<float> &eta, vector<float> &phi, f
     for(int i=0; i<min(nJet30,4); i++){
         results[6] = min(results[6], DeltaPhi(met_phi, ptphi.at(i).second));
     }
+    if(results[6]==999)
+        results[6] = -1;
+
 
 }
