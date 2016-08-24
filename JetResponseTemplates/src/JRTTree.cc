@@ -1,5 +1,5 @@
 
-#include "JetResponseTemplates/JetResponseTemplates/interface/JRTTree.h"
+#include "../interface/JRTTree.h"
 #include <vector>
 #include "TTree.h"
 #include "TDirectory.h"
