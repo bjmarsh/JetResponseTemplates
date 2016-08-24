@@ -11,14 +11,17 @@ bin/
 * `JRTbabymaker.cc` - The babymaker. Uses the python config files in the `test` directory.
 * `JRTlooper.cc` - Looper that runs over the babies and produces the jet response templates. Usage is `JRTlooper <input files>`.
 * `JRTprintjets.cc` - Used for debugging, prints contents of the jets of a specified event.
+* `JRTaddFits.cc` - Post-process the template file (output of JRTlooper) to add fits.
 
 src/
 
 * `JRTTree.cc` - class for the handling of the TTree in the babies. Can be used in "write mode" (in the babymaker) or in "read mode" (in the looper).
+* `JRTreader.cc` - class to handle the reading of the templates. Initialized with the filename of the output of JRTlooper, and then can compute values or generate random smear factors based on the templates.
 
 interface/
 
 * `JRTTree.h` - header for the above.
+* `JRTreader.h` - header for the above.
 
 test/
 
