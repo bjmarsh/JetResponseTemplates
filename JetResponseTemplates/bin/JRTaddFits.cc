@@ -99,26 +99,28 @@ int main(int argc, char* argv[])
                 
                 TH1D* h_fit;
 
-                h_fit = FitMethod1(h);
+                // h_fit = FitMethod1(h);
 
-                // int deg = 2;
-                // int window = 8;
-                // // bjets
-                // if(ij==0){
-                //     deg = 2;
-                //     window = 10;
-                //     if(ipt>=0 && ieta>=8){ deg=1; window=8; }
-                // }
-                // // non bjets
-                // if(ij==1){
-                //     deg = 2;
-                //     window = 8;
-                //     if(ipt>=1 && ieta==11){ deg=1;            }
-                //     if(ipt>=3 && ieta==11){ deg=1; window=15; }
-                //     if(ipt>=4)            {      ; window=5;  }
-                //     if(ipt>=5 && ieta==10){ deg=2; window=6;  }
-                // }
-                // h_fit = FitMethod2(h, deg, window);
+                int deg = 2;
+                int window = 8;
+                // bjets
+                if(ij==0){
+                    deg = 2;
+                    window = 10;
+                    if(ipt>=0 && ieta>=8){ deg=1; window=8; }
+                    if(ipt>=5 && ieta>=8){ deg=2; window=8; }
+                    if(ipt>=7)           { deg=2; window=6; }
+                }
+                // non bjets
+                if(ij==1){
+                    deg = 2;
+                    window = 8;
+                    if(ipt>=1 && ieta==11){ deg=1;            }
+                    if(ipt>=3 && ieta==11){ deg=1; window=15; }
+                    if(ipt>=4)            {      ; window=5;  }
+                    if(ipt>=5 && ieta==10){ deg=2; window=6;  }
+                }
+                h_fit = FitMethod2(h, deg, window);
 
                 h_fit->SetName(fname);
                 h_fit->Write();

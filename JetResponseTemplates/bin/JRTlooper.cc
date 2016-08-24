@@ -84,7 +84,7 @@ int main(int argc, char* argv[])
 
         // branch for scale1fb is not in JRTTree
         float scale;
-        tree->SetBranchAddress("evtscale1fb", &scale);
+        tree->SetBranchAddress("evt_scale1fb", &scale);
 
         unsigned int nEventsTree = tree->GetEntriesFast();
         for( unsigned int event = 0; event < nEventsTree; ++event) {
