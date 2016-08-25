@@ -191,7 +191,7 @@ int main(int argc, char* argv[])
                         isBjet = 1;
 
                     // get the smearing factor
-                    float smearfact = reader.GetResponse(t.genjet_pt->at(ig), t.genjet_eta->at(ig), isBjet);
+                    float smearfact = reader.GetRandomResponse(t.genjet_pt->at(ig), t.genjet_eta->at(ig), isBjet);
                     float smearpt = t.genjet_pt->at(ig) * smearfact;
                     
                     //add the smeared jet to the list

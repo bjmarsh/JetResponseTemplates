@@ -22,10 +22,13 @@ class JRTreader {
     JRTreader(char *fname=0);
     ~JRTreader();
     int Init(char *fname);
-    float GetResponse(float pt, float eta, bool isBjet);
+    float GetRandomResponse(float pt, float eta, bool isBjet);
+    float GetValue(float pt, float eta, bool isBjet, float smearfact);
     static int GetPtBin(float pt);
     static int GetEtaBin(float eta);
-    void UseRawHistograms(bool use);
+    static void GetModifiedBins(int ptbin, int etabin, bool isBjet, int *new_ptbin, int *new_etabin);
+    void UseRawHistograms(bool use=true);
+
 
  private:
     vector< vector<TH1D*>* > *fits_b;

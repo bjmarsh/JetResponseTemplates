@@ -75,14 +75,58 @@ int JRTreader::Init(char *fname){
     return 1;
 }
 
-float JRTreader::GetResponse(float pt, float eta, bool isBjet){
+float JRTreader::GetRandomResponse(float pt, float eta, bool isBjet){
     
-    string jetreg = "nonbjet";
-    if(isBjet)
-        jetreg = "bjet";
 
-    int ptbin = JRTreader::GetPtBin(pt);
-    int etabin = JRTreader::GetEtaBin(fabs(eta));
+    int ptbin_orig = JRTreader::GetPtBin(pt);
+    int etabin_orig = JRTreader::GetEtaBin(fabs(eta));
+
+    int ptbin, etabin;
+    JRTreader::GetModifiedBins(ptbin_orig, etabin_orig, isBjet, &ptbin, &etabin);
+
+    TH1D *fit;
+    if(isBjet)
+        fit = fits_b->at(ptbin)->at(etabin);
+    else
+        fit = fits_nonb->at(ptbin)->at(etabin);
+
+    if(fit==NULL){
+        cout << "WARNING: could not find fit histogram for bins pt=" << ptbin << " eta=" << etabin << endl;
+        return 1.;
+    }
+
+    float response = fit->GetRandom();
+    return response;
+}
+
+float JRTreader::GetValue(float pt, float eta, bool isBjet, float smearfact){
+    
+    int ptbin_orig = JRTreader::GetPtBin(pt);
+    int etabin_orig = JRTreader::GetEtaBin(fabs(eta));
+
+    int ptbin, etabin;
+    JRTreader::GetModifiedBins(ptbin_orig, etabin_orig, isBjet, &ptbin, &etabin);
+
+    TH1D *fit;
+    if(isBjet)
+        fit = fits_b->at(ptbin)->at(etabin);
+    else
+        fit = fits_nonb->at(ptbin)->at(etabin);
+
+    if(fit==NULL){
+        cout << "WARNING: could not find fit histogram for bins pt=" << ptbin << " eta=" << etabin << endl;
+        return 1.;
+    }
+
+    float response = fit->GetBinContent(fit->FindBin(smearfact));
+    return response;
+}
+
+void JRTreader::UseRawHistograms(bool use){
+    useFits = !use;
+}
+
+void JRTreader::GetModifiedBins(int ptbin, int etabin, bool isBjet, int *new_ptbin, int *new_etabin){
 
     if(isBjet){
         if(ptbin > 19) ptbin = 19;
@@ -129,27 +173,9 @@ float JRTreader::GetResponse(float pt, float eta, bool isBjet){
 
     }
 
-    // cout << jetreg << " " << ptbin << " " << etabin << endl;
-    // cout << " " << pt << " " << eta << endl;
-
-    TH1D *fit;
-    if(isBjet)
-        fit = fits_b->at(ptbin)->at(etabin);
-    else
-        fit = fits_nonb->at(ptbin)->at(etabin);
-
-    if(fit==NULL){
-        cout << "WARNING: could not find TF1 for bins pt=" << ptbin << " eta=" << etabin << endl;
-        return 1.;
-    }
-
-    // float response = fit->GetRandom(0,3);
-    float response = fit->GetRandom();
-    return response;
-}
-
-void JRTreader::UseRawHistograms(bool use){
-    useFits = !use;
+    *new_ptbin = ptbin;
+    *new_etabin = etabin;
+    
 }
 
 int JRTreader::GetPtBin(float pt){
