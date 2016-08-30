@@ -28,12 +28,13 @@ class JRTreader {
     static int GetEtaBin(float eta);
     static void GetModifiedBins(int ptbin, int etabin, bool isBjet, int *new_ptbin, int *new_etabin);
     void UseRawHistograms(bool use=true);
-
+    void SetBinWidth(float width);
 
  private:
     vector< vector<TH1D*>* > *fits_b;
     vector< vector<TH1D*>* > *fits_nonb;
     bool useFits = true;
+    float BINWIDTH = 0.02;
 };
 
 #endif

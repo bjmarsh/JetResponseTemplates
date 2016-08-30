@@ -118,7 +118,8 @@ float JRTreader::GetValue(float pt, float eta, bool isBjet, float smearfact){
         return 1.;
     }
 
-    float response = fit->GetBinContent(fit->FindBin(smearfact));
+    int bin = (int)(smearfact/BINWIDTH)+1;
+    float response = fit->GetBinContent(bin);
     return response;
 }
 
@@ -202,3 +203,6 @@ int JRTreader::GetEtaBin(float eta){
     return n_eta_bins-1;
 }
 
+void JRTreader::SetBinWidth(float width){
+    BINWIDTH = width;
+}
