@@ -13,21 +13,33 @@
 
 #include "JetResponseTemplates/JetResponseTemplates/interface/JRTreader.h"
 #include "JetResponseTemplates/JetResponseTemplates/interface/JRTTree.h"
+#include "JetResponseTemplates/JetResponseTemplates/interface/JRTrebalTree.h"
 
 #define NSMEARS 100
-#define EVTRED 10
+#define EVTRED 20
 
 using namespace std;
 
 void computeJetVars(string jettype, float met_pt, float met_phi, float *results);
 
-float metCut = 10;
-bool doGenJetMatching = true;
+float metCut = 0;
+bool doGenJetMatching = false;
+bool doRecoJetMatching = false;
 
 JRTTree t;
 vector<float> smearjet_pt;
 vector<float> smearjet_eta;
 vector<float> smearjet_phi;
+vector<float> rebaljet_pt;
+vector<float> rebaljet_eta;
+vector<float> rebaljet_phi;
+vector<float> RSjet_pt;
+vector<float> RSjet_eta;
+vector<float> RSjet_phi;
+
+bool doRebalance = true;
+JRTrebalTree rebalTree;
+string rebalanceDir = "/home/users/bemarsh/analysis/mt2/current/MT2Analysis/RebalanceAndSmear/output/test";
 
 int main(int argc, char* argv[]) 
 {
@@ -39,15 +51,17 @@ int main(int argc, char* argv[])
 
     //setup chain
     TChain *chain = new TChain("Events");
+    TChain *rebalChain = new TChain("rebalance");
 
     chain->Add(Form("%s/%s*.root",argv[2],argv[4]));
+    if(doRebalance)
+        rebalChain->Add(Form("%s/%s*.root",rebalanceDir.c_str(),argv[4]));
 
     // open output file and initialize histograms
     TFile *fout = new TFile(Form("%s/%s.root",argv[3],argv[4]), "RECREATE");
 
-    string tags[] = {"reco","gen","gensmear"};
+    string tags[] = {"reco","gen","gensmear","rebalance"};
     vector<TH1D*> h_nJet30_vec;
-    vector<TH1D*> h_lowmet_vec;
     vector<TH1D*> h_met_vec;
     vector<TH1D*> h_ht_vec;
     vector<TH1D*> h_mht_vec;
@@ -55,9 +69,8 @@ int main(int argc, char* argv[])
     vector<TH1D*> h_j1pt_vec;
     vector<TH1D*> h_j2pt_vec;
     vector<TH1D*> h_deltaPhiMin_vec;
-    for(int i=0; i<3; i++){
+    for(int i=0; i<4; i++){
         h_nJet30_vec.push_back(new TH1D(("h_nJet30_"+tags[i]).c_str(),";nJet30",10,0,10));
-        h_lowmet_vec.push_back(new TH1D(("h_lowmet_"+tags[i]).c_str(),";E_{T}^{miss} [GeV]",100,0,150));
         h_met_vec.push_back(new TH1D(("h_met_"+tags[i]).c_str(),";E_{T}^{miss} [GeV]",150,0,1500));
         h_ht_vec.push_back(new TH1D(("h_ht_"+tags[i]).c_str(), ";H_{T} [GeV]",150,0,1500));
         h_mht_vec.push_back(new TH1D(("h_mht_"+tags[i]).c_str(), ";H_{T}^{miss} [GeV]",150,0,1500));
@@ -73,13 +86,23 @@ int main(int argc, char* argv[])
     TIter fileIter(listOfFiles);
     TFile *currentFile = 0;
 
+    TFile *rebalFile = 0;
+    if(doRebalance){
+        // FOR NOW: expecting only 1 rebalance file. Kinda hackish. Oh well.
+        rebalFile = new TFile(((TFile*)TIter(rebalChain->GetListOfFiles()).Next())->GetTitle());
+        if(rebalFile->IsZombie()){
+            cout << "Couldn't find rebalance file!" << endl;
+            return 1;
+        } 
+        rebalTree.Init((TTree*)rebalFile->Get("rebalance"));
+    }
+
     cout << "Processing " << nEventsChain << " events." << endl;
 
     // reader to get random values from templates.
     JRTreader reader;
     reader.UseRawHistograms(false);
     reader.Init(argv[1]);
-
 
     while ( (currentFile = (TFile*)fileIter.Next()) ) {
         
@@ -100,16 +123,19 @@ int main(int argc, char* argv[])
         unsigned int nEventsTree = tree->GetEntriesFast();
         cout << " Events in tree: " << nEventsTree << endl;
         unsigned int maxEvents = nEventsTree;
-        maxEvents = nEventsTree / EVTRED;
-        // maxEvents = 2;
+        maxEvents = nEventsTree;
         for( unsigned int event = 0; event < maxEvents; ++event) {
     
-            // if(event%1 == 0)
-            //     cout << "Processing event: " << event << endl;
+            if(event%EVTRED != 0)
+                continue;
 
             // Get Event Content
             Long64_t tentry = tree->LoadTree(event);
             t.GetEntry(tentry);
+
+            if(doRebalance)
+                rebalTree.GetEntry(nEventsTotal);
+
             ++nEventsTotal;
 
             scale *= EVTRED;
@@ -140,7 +166,6 @@ int main(int argc, char* argv[])
             // computeJetVars(t.recojet_pt, t.recojet_eta, t.recojet_phi, NULL, t.pfmet_pt, t.pfmet_phi, jetVars);
             h_nJet30_vec.at(0)->Fill(jetVars[0], scale);
             if(jetVars[0] >= 2 && t.pfmet_pt>metCut){
-                h_lowmet_vec.at(0)->Fill(t.pfmet_pt, scale);
                 h_met_vec.at(0)->Fill(t.pfmet_pt, scale);
                 h_ht_vec.at(0)->Fill(jetVars[1], scale);
                 h_mht_vec.at(0)->Fill(jetVars[2], scale);
@@ -154,7 +179,6 @@ int main(int argc, char* argv[])
             computeJetVars("gen", t.genmet_pt, t.genmet_phi, jetVars);
             h_nJet30_vec.at(1)->Fill(jetVars[0], scale);
             if(jetVars[0] >= 2){
-                h_lowmet_vec.at(1)->Fill(t.genmet_pt, scale);
                 h_met_vec.at(1)->Fill(t.genmet_pt, scale);
                 h_ht_vec.at(1)->Fill(jetVars[1], scale);
                 h_mht_vec.at(1)->Fill(jetVars[2], scale);
@@ -163,7 +187,6 @@ int main(int argc, char* argv[])
                 h_j2pt_vec.at(1)->Fill(jetVars[5], scale);
                 h_deltaPhiMin_vec.at(1)->Fill(jetVars[6], scale);
             }
-
 
             // SMEAR JETS AND COMPUTE QUANTITIES
             for(int ismear=0; ismear < NSMEARS; ismear++){
@@ -223,7 +246,6 @@ int main(int argc, char* argv[])
                 computeJetVars("smear", met_smear, met_smear_phi, jetVars);
                 h_nJet30_vec.at(2)->Fill(jetVars[0], scale/NSMEARS);
                 if(jetVars[0] >= 2 && met_smear>metCut){
-                    h_lowmet_vec.at(2)->Fill(met_smear, scale/NSMEARS);
                     h_met_vec.at(2)->Fill(met_smear, scale/NSMEARS);
                     h_ht_vec.at(2)->Fill(jetVars[1], scale/NSMEARS);
                     h_mht_vec.at(2)->Fill(jetVars[2], scale/NSMEARS);
@@ -236,6 +258,54 @@ int main(int argc, char* argv[])
             }// smearing loop
 
 
+            if(!doRebalance)
+                continue;
+
+            rebaljet_pt.clear();
+            rebaljet_eta.clear();
+            rebaljet_phi.clear();
+
+            if((unsigned int)t.n_recojet != rebalTree.useJet->size()){
+                cout << "WARNING: mismatched event! " << event << " " << nEventsTotal-1 << endl;
+                continue;
+            }
+
+            float rebal_met_pt = t.pfmet_pt;
+            float rebal_met_phi = t.pfmet_phi;
+            float rebal_met_x = rebal_met_pt * cos(rebal_met_phi);
+            float rebal_met_y = rebal_met_pt * sin(rebal_met_phi);
+
+            int ireb = -1;
+            for(int i=0; i<t.n_recojet; i++){
+                if(rebalTree.useJet->at(i) != 1)
+                    continue;
+                ireb += 1;
+
+                float newpt = t.recojet_pt->at(i) * rebalTree.rebalanceFactors->at(ireb);
+
+                rebal_met_x += (t.recojet_pt->at(i) - newpt) * cos(t.recojet_phi->at(i));
+                rebal_met_y += (t.recojet_pt->at(i) - newpt) * sin(t.recojet_phi->at(i));
+
+                rebaljet_pt.push_back(newpt);
+                rebaljet_eta.push_back(t.recojet_eta->at(i));
+                rebaljet_phi.push_back(t.recojet_phi->at(i));
+            }
+            rebal_met_pt = sqrt(rebal_met_x*rebal_met_x + rebal_met_y*rebal_met_y);
+            rebal_met_phi = atan2(rebal_met_y, rebal_met_x);
+
+            // COMPUTE REBALANCED JET QUANTITIES //
+            computeJetVars("rebalance", rebal_met_pt, rebal_met_phi, jetVars);
+            h_nJet30_vec.at(3)->Fill(jetVars[0], scale);
+            if(jetVars[0] >= 2){
+                h_met_vec.at(3)->Fill(rebal_met_pt, scale);
+                h_ht_vec.at(3)->Fill(jetVars[1], scale);
+                h_mht_vec.at(3)->Fill(jetVars[2], scale);
+                h_diffMetMhtOverMet_vec.at(3)->Fill(jetVars[3], scale);
+                h_j1pt_vec.at(3)->Fill(jetVars[4], scale);
+                h_j2pt_vec.at(3)->Fill(jetVars[5], scale);
+                h_deltaPhiMin_vec.at(3)->Fill(jetVars[6], scale);
+            }
+
         }//event loop
         
         cout << " nBadEvents: " << nBadEvents << endl;
@@ -243,11 +313,10 @@ int main(int argc, char* argv[])
     }//file loop
 
     fout->cd();
-    for(int i=0; i<3; i++){
+    for(int i=0; i<4; i++){
         TDirectory *d = fout->mkdir(tags[i].c_str());
         d->cd();
         h_nJet30_vec.at(i)->Write();
-        h_lowmet_vec.at(i)->Write();
         h_met_vec.at(i)->Write();
         h_ht_vec.at(i)->Write();
         h_mht_vec.at(i)->Write();
@@ -296,13 +365,20 @@ float DeltaR(float eta1, float phi1, float eta2, float phi2){
 }
 
 float overlapsGenJet(float eta, float phi){
-    
     for(int i=0; i<t.n_genjet; i++){
         if(DeltaR(eta, phi, t.genjet_eta->at(i), t.genjet_phi->at(i)) < 0.3)
             return true;
     }
     return false;
+}
 
+float overlapsRecoJet(float eta, float phi){
+    for(int i=0; i<t.n_recojet; i++){
+        if(DeltaR(eta, phi, t.recojet_eta->at(i), t.recojet_phi->at(i)) < 0.3)
+            if(t.recojet_pt->at(i) > 10)
+                return true;
+    }
+    return false;
 }
 
 // compute nJet30, ht, mht, diffMetMht/met, jet1_pt, jet2_pt, deltaPhiMin
@@ -330,6 +406,12 @@ void computeJetVars(string jettype, float met_pt, float met_phi, float *results)
         phi = &smearjet_phi;
         jetID = NULL;
     }
+    if(jettype=="rebalance"){
+        pt = &rebaljet_pt;
+        eta = &rebaljet_eta;
+        phi = &rebaljet_phi;
+        jetID = NULL;
+    }
 
 
     int njets = pt->size();
@@ -353,6 +435,9 @@ void computeJetVars(string jettype, float met_pt, float met_phi, float *results)
             }
 
             if(jettype=="reco" && doGenJetMatching && !overlapsGenJet(eta->at(ij),phi->at(ij)))
+                continue;
+
+            if((jettype=="gen" || jettype=="smear") && doRecoJetMatching && !overlapsRecoJet(eta->at(ij),phi->at(ij)))
                 continue;
 
             ht += pt->at(ij);
