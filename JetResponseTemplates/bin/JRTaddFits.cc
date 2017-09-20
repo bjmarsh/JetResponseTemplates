@@ -83,12 +83,14 @@ int main(int argc, char* argv[])
 
                 fname = Form("fit_pt%d_eta%d_%s",ipt,ieta, jetregs[ij].c_str());
                 gDirectory->Delete(fname+";*");
+                gDirectory->Delete(fname+"_core;*");
+                gDirectory->Delete(fname+"_tail;*");
                 
                 // dont try to do a fit if the hist is empty
                 if(h->GetEntries()==0)
                     continue;
 
-                float zeroerror = h->GetMaximum() / 50;
+                float zeroerror = h->GetMaximum() / 100;
                 
                 for(int ibin=1; ibin <= h->GetNbinsX(); ibin++){
                     if(h->GetBinContent(ibin) == 0){
@@ -112,7 +114,7 @@ int main(int argc, char* argv[])
                     if(ipt>=7)           { deg=2; window=6; }
                 }
                 // non bjets
-                if(ij==1){
+                if(ij==1 || ij==2){
                     deg = 2;
                     window = 8;
                     if(ipt>=1 && ieta==11){ deg=1;            }
@@ -125,8 +127,35 @@ int main(int argc, char* argv[])
                 h_fit->SetName(fname);
                 h_fit->Write();
 
+                //get core and tails
+                TF1 *core = new TF1("fcore","[0]*exp(-0.5*(x-[1])/[2]*(x-[1])/[2])",0,3);
+                float max = h_fit->GetBinContent(h_fit->GetMaximumBin());
+                float mean = h_fit->GetBinCenter(h_fit->GetMaximumBin());
+                float rms = h_fit->GetRMS();
+                if(rms > 0.1)
+                    rms *= 0.5;
+                core->SetRange(mean-rms, mean+rms);
+                core->SetParameters(max, mean, 0.1);
+                core->SetParLimits(0, max-0.0005, max+0.0005);
+                core->SetParLimits(1, mean-0.02, mean+0.02);
+                h_fit->Fit(core, "QNR", "goff");
+                core->SetRange(0,3);
+                core->SetNpx(300);
+
+                TH1D* h_core = (TH1D*)core->GetHistogram()->Clone(fname+"_core");
+                TH1D* h_tail = (TH1D*)h_fit->Clone(fname+"_tail");
+                h_tail->Add(h_core, -1);
+
+                h_core->Write();
+                h_tail->Write();
+                   
                 delete h_fit;
+                delete core;
+                delete h_core;
+                delete h_tail;
             }
+
+
 
         }
     }    
@@ -139,8 +168,8 @@ int main(int argc, char* argv[])
 // fit to a triple gaussian
 TH1D* FitMethod1(TH1D *h){
     
-    // TString func = "[0]*exp(-0.5*((x-[1])/[2])*((x-[1])/[2])) + [3]*exp(-0.5*((x-[4])/[5])*((x-[4])/[5])) + [6]*exp(-0.5*((x-[7])/[8])*((x-[7])/[8]))";
-    TString func = "0.3989*([0]/[2]*exp(-0.5*((x-[1])/[2])*((x-[1])/[2])) + [3]/[5]*exp(-0.5*((x-[4])/[5])*((x-[4])/[5])) + (1-[0]-[3])/[7]*exp(-0.5*((x-[6])/[7])*((x-[6])/[7])))";
+    TString func = "[0]*exp(-0.5*((x-[1])/[2])*((x-[1])/[2])) + [3]*exp(-0.5*((x-[4])/[5])*((x-[4])/[5])) + [6]*exp(-0.5*((x-[7])/[8])*((x-[7])/[8]))";
+    // TString func = "0.3989*([0]/[2]*exp(-0.5*((x-[1])/[2])*((x-[1])/[2])) + [3]/[5]*exp(-0.5*((x-[4])/[5])*((x-[4])/[5])) + (1-[0]-[3])/[7]*exp(-0.5*((x-[6])/[7])*((x-[6])/[7])))";
     TF1* f = new TF1("ftmp", func, 0.0, 3.0);
 
     TH1D *h2 = (TH1D*)h->Clone();
@@ -153,9 +182,9 @@ TH1D* FitMethod1(TH1D *h){
     float center = h->GetBinCenter(maxbin);
     float rms = h->GetRMS();
 
-    // f->SetParameters(max, center, rms, max/3, center+0.2, 0.3, max/3, center-0.2, 0.3);
-    max = max*rms/0.3989;
-    f->SetParameters(max, center, rms, max/3, center+0.2, 0.3, center-0.2, 0.3);
+    f->SetParameters(max, center, rms, max/3, center+0.2, 0.3, max/3, center-0.2, 0.3);
+    // max = max*rms/0.3989;
+    // f->SetParameters(max, center, rms, max/3, center+0.2, 0.3, center-0.2, 0.3);
 
     f->SetParLimits(0,max-0.003,max+0.003);
     f->SetParLimits(1, center-0.02, center+0.02);
@@ -164,12 +193,12 @@ TH1D* FitMethod1(TH1D *h){
     f->SetParLimits(4,0,3);
     f->SetParLimits(5,0.1,5);
 
-    // f->SetParLimits(6,0,max/2);
-    // f->SetParLimits(7,0,3);
-    // f->SetParLimits(8,0.1,5);
+    f->SetParLimits(6,0,max/2);
+    f->SetParLimits(7,0,3);
+    f->SetParLimits(8,0.1,5);
 
-    f->SetParLimits(6,0,3);
-    f->SetParLimits(7,0.1,5);
+    // f->SetParLimits(6,0,3);
+    // f->SetParLimits(7,0.1,5);
 
     h->Fit(f,"QNR","goff");
     f->SetNpx(300);
@@ -216,10 +245,26 @@ TH1D* FitMethod2(TH1D* h, int degree, int window){
         h_pred->SetBinError(i,0);
     }
 
-    if(h_pred->Integral() > 0)
-        h_pred->Scale(1.0/h_pred->Integral()/h_pred->GetBinWidth(1));
+    h_pred->SetBinContent(0,0); // shouldn't need to do this, but just in case
+    h_pred->SetBinContent(h_pred->GetNbinsX()+1, 0);
+    TH1D *h_pred_fine = new TH1D("h_pred_fine","",300, 0, 3);
+    for(int i=1; i<=h_pred_fine->GetNbinsX(); i++){
+        if(i%2 == 1){
+            int j = (i-1)/2;
+            h_pred_fine->SetBinContent(i, 0.25*h_pred->GetBinContent(j) + 0.75*h_pred->GetBinContent(j+1));
+        }
+        if(i%2 == 0){
+            int j = (i+1)/2;
+            h_pred_fine->SetBinContent(i, 0.75*h_pred->GetBinContent(j) + 0.25*h_pred->GetBinContent(j+1));
+        }
+    }
+
+    if(h_pred_fine->Integral() > 0)
+        h_pred_fine->Scale(1.0/h_pred_fine->Integral()/h_pred_fine->GetBinWidth(1));
 
     delete fitter;
+    delete h_pred;
+    
+    return h_pred_fine;
 
-    return h_pred;
 }

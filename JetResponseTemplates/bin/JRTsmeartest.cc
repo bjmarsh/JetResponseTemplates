@@ -10,13 +10,17 @@
 #include <TTreeCache.h>
 #include <TString.h>
 #include <TDirectory.h>
+#include <TLorentzVector.h>
 
 #include "JetResponseTemplates/JetResponseTemplates/interface/JRTreader.h"
 #include "JetResponseTemplates/JetResponseTemplates/interface/JRTTree.h"
 #include "JetResponseTemplates/JetResponseTemplates/interface/JRTrebalTree.h"
 
+// #include "/home/users/bemarsh/CORE/Tools/hemJet.h"
+// #include "/home/users/bemarsh/CORE/Tools/MT2/MT2.h"
+
 #define NSMEARS 100
-#define EVTRED 20
+#define EVTRED 1
 
 using namespace std;
 
@@ -37,7 +41,7 @@ vector<float> RSjet_pt;
 vector<float> RSjet_eta;
 vector<float> RSjet_phi;
 
-bool doRebalance = true;
+bool doRebalance = false;
 JRTrebalTree rebalTree;
 string rebalanceDir = "/home/users/bemarsh/analysis/mt2/current/MT2Analysis/RebalanceAndSmear/output/test";
 
@@ -200,6 +204,9 @@ int main(int argc, char* argv[])
                     break;
                 }
 
+                float met_smear_x = t.genmet_pt * cos(t.genmet_phi);
+                float met_smear_y = t.genmet_pt * sin(t.genmet_phi);
+
                 for(int ig=0; ig<t.n_genjet; ig++){
                     int flavour = t.genjet_flavour_cmssw->at(ig);
 
@@ -222,22 +229,25 @@ int main(int argc, char* argv[])
                     smearjet_eta.push_back(t.genjet_eta->at(ig));
                     smearjet_phi.push_back(t.genjet_phi->at(ig));
 
+                    met_smear_x += (t.genjet_pt->at(ig)-smearpt) * cos(t.genjet_phi->at(ig));
+                    met_smear_y += (t.genjet_pt->at(ig)-smearpt) * sin(t.genjet_phi->at(ig));
+                    
                 }//genjet loop
 
+ 
+                // //recompute met with smeared jets
+                // float met_smear_x = met_sub_x;
+                // float met_smear_y = met_sub_y;
+                // for(unsigned int ij=0; ij<smearjet_pt.size(); ij++){
+                //     float pt = smearjet_pt.at(ij);
+                //     float phi = smearjet_phi.at(ij);
 
-                //recompute met with smeared jets
-                float met_smear_x = met_sub_x;
-                float met_smear_y = met_sub_y;
-                for(unsigned int ij=0; ij<smearjet_pt.size(); ij++){
-                    float pt = smearjet_pt.at(ij);
-                    float phi = smearjet_phi.at(ij);
-
-                    if(pt > 10){
-                        met_smear_x -= pt * cos(phi);
-                        met_smear_y -= pt * sin(phi);
-                    }
+                //     if(pt > 10){
+                //         met_smear_x -= pt * cos(phi);
+                //         met_smear_y -= pt * sin(phi);
+                //     }
                     
-                }// loop over smeared jets
+                // }// loop over smeared jets
 
                 
                 float met_smear = sqrt(met_smear_x*met_smear_x + met_smear_y*met_smear_y);
@@ -245,7 +255,8 @@ int main(int argc, char* argv[])
                 // COMPUTE SMEARJET QUANTITIES //
                 computeJetVars("smear", met_smear, met_smear_phi, jetVars);
                 h_nJet30_vec.at(2)->Fill(jetVars[0], scale/NSMEARS);
-                if(jetVars[0] >= 2 && met_smear>metCut){
+                // if(jetVars[0] >= 2 && met_smear>metCut){
+                if(jetVars[0] >= 2 && met_smear>30 && jetVars[1]>1000){
                     h_met_vec.at(2)->Fill(met_smear, scale/NSMEARS);
                     h_ht_vec.at(2)->Fill(jetVars[1], scale/NSMEARS);
                     h_mht_vec.at(2)->Fill(jetVars[2], scale/NSMEARS);
