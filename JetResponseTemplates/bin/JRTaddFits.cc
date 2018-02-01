@@ -19,8 +19,10 @@ using namespace std;
 TH1D* FitMethod1(TH1D *h, TF1* core=NULL);
 TH1D* FitMethod2(TH1D *h, int degree=1, int window=8);
 TH1D* FitMethod3(TH1D *h, TF1* core=NULL);
+TH1D* FitMethod4(TH1D *h, TF1* core=NULL);
 
 double DoubleCrystalBall(double *xp, double *par);
+double BennettFunc(double *xp, double *par);
 
 int main(int argc, char* argv[]) 
 {
@@ -71,6 +73,9 @@ int main(int argc, char* argv[])
     for(int ipt = 0; ipt < n_pt_bins; ipt++){
         for(int ieta = 0; ieta < n_eta_bins; ieta++){
 
+    // for(int ipt = 0; ipt <= 0; ipt++){
+    //     for(int ieta = 1; ieta <= 1; ieta++){
+
             TString dirname;
             dirname = Form("pt%d/pt%d_eta%d",ipt,ipt,ieta);
             
@@ -97,7 +102,7 @@ int main(int argc, char* argv[])
                 
                 // Uncomment to add pseudo-content to bins with no entries
                 // prevents spurious "bumps" in the fit
-                float zeroerror = h->GetMaximum() / 10;                             
+                float zeroerror = h->GetMaximum() / 1000;   
                 for(int ibin=1; ibin <= h->GetNbinsX(); ibin++){
                     if(h->GetBinContent(ibin) == 0){
                         h->SetBinContent(ibin,0.0000001);
@@ -123,41 +128,47 @@ int main(int argc, char* argv[])
 
                 ////// METHOD 2 (smoothing) /////////////////////////////////////////
 
-                int deg = 2;
-                int window = 8;
-                // bjets
-                if(ij==0){
-                    deg = 2;
-                    window = 10;
-                    if(ipt>=0 && ieta>=8){ deg=1; window=8; }
-                    if(ipt>=5 && ieta>=8){ deg=2; window=8; }
-                    if(ipt>=7)           { deg=2; window=6; }
-                }
-                // non bjets
-                if(ij==1 || ij==2){
-                    deg = 2;
-                    window = 8;
-                    if(ipt>=1 && ieta==11){ deg=1;            }
-                    if(ipt>=3 && ieta==11){ deg=1; window=15; }
-                    if(ipt>=4)            {      ; window=5;  }
-                    if(ipt>=5 && ieta==10){ deg=2; window=6;  }
-                }
-                h_fit = FitMethod2(h, deg, window);
-                // will fit the core if the FitMethod doesn't do this already (FitMethod2)
-                float max = h_fit->GetBinContent(h_fit->GetMaximumBin());
-                float mean = h_fit->GetBinCenter(h_fit->GetMaximumBin());
-                float rms = h_fit->GetRMS();
-                // if(rms > 0.1)
-                //     rms *= 0.5;
-                core->SetRange(mean-rms, mean+rms);
-                core->SetParameters(max, mean, 0.1);
-                core->SetParLimits(0, max-0.003, max+0.003);
-                core->SetParLimits(1, mean-0.02, mean+0.02);
-                h_fit->Fit(core, "QNR", "goff");
+                // int deg = 2;
+                // int window = 8;
+                // // bjets
+                // if(ij==0){
+                //     deg = 2;
+                //     window = 10;
+                //     if(ipt>=0 && ieta>=8){ deg=1; window=8; }
+                //     if(ipt>=5 && ieta>=8){ deg=2; window=8; }
+                //     if(ipt>=7)           { deg=2; window=6; }
+                // }
+                // // non bjets
+                // if(ij==1 || ij==2){
+                //     deg = 2;
+                //     window = 8;
+                //     if(ipt>=1 && ieta==11){ deg=1;            }
+                //     if(ipt>=3 && ieta==11){ deg=1; window=15; }
+                //     if(ipt>=4)            {      ; window=5;  }
+                //     if(ipt>=5 && ieta==10){ deg=2; window=6;  }
+                // }
+                // h_fit = FitMethod2(h, deg, window);
+                // // will fit the core if the FitMethod doesn't do this already (FitMethod2)
+                // float max = h_fit->GetBinContent(h_fit->GetMaximumBin());
+                // float mean = h_fit->GetBinCenter(h_fit->GetMaximumBin());
+                // float rms = h_fit->GetRMS();
+                // // if(rms > 0.1)
+                // //     rms *= 0.5;
+                // core->SetRange(mean-rms, mean+rms);
+                // core->SetParameters(max, mean, 0.1);
+                // core->SetParLimits(0, max-0.003, max+0.003);
+                // core->SetParLimits(1, mean-0.02, mean+0.02);
+                // h_fit->Fit(core, "QNR", "goff");
 
                 ////// METHOD 3 (double crystal ball) /////////////////////////////////
 
                 // h_fit = FitMethod3(h, core);
+
+                //////////////////////////////////////////////////////////////////////
+
+                ////// METHOD 4 (bennett func) /////////////////////////////////
+
+                h_fit = FitMethod4(h, core);
 
                 //////////////////////////////////////////////////////////////////////
 
@@ -209,7 +220,8 @@ TH1D* FitMethod1(TH1D *h, TF1* core){
     float center = h->GetBinCenter(maxbin);
     float rms = h->GetRMS();
 
-    f->SetParameters(max, center, rms, max/3, center+0.2, 0.3, max/3, center-0.2, 0.3);
+    // f->SetParameters(max, center, rms, max/3, center-rms, rms/2, max/3, center+rms, rms/2);
+    f->SetParameters(max, center, rms, max/3, center-0.2, 0.3, max/3, center+0.2, 0.3);
     // max = max*rms/0.3989;
     // f->SetParameters(max, center, rms, max/3, center+0.2, 0.3, center-0.2, 0.3);
 
@@ -236,6 +248,12 @@ TH1D* FitMethod1(TH1D *h, TF1* core){
         core->SetParameter(1, f->GetParameter(1));
         core->SetParameter(2, f->GetParameter(2));
     }
+
+    // core->SetParameters(max, center, rms);
+    // core->SetParLimits(0, max-0.0005, max+0.0005);
+    // core->SetParLimits(1, center-0.02, center+0.02);
+    // if(rms > 0.1) rms *= 0.5;
+    // hfit->Fit(core, "QN", "goff", center-rms, center+rms);
 
     delete f;
     delete h2;
@@ -303,6 +321,7 @@ TH1D* FitMethod2(TH1D* h, int degree, int window){
 
 }
 
+
 // fit to a DoubleCrystalBall
 TH1D* FitMethod3(TH1D *h, TF1* core){
     
@@ -355,7 +374,69 @@ TH1D* FitMethod3(TH1D *h, TF1* core){
     f->SetNpx(300);
     TH1D* hfit = (TH1D*)f->GetHistogram()->Clone();
 
-    // cout << f->GetParameter(0) << " " << f->GetParameter(1) << " " << f->GetParameter(2) << " " << f->GetParameter(3) << " " << f->GetParameter(4) << " " << f->GetParameter(5) << " " << f->GetParameter(6) << endl;
+    if(core != NULL){
+        core->SetParameter(0, f->GetParameter(0));
+        core->SetParameter(1, f->GetParameter(1));
+        core->SetParameter(2, f->GetParameter(2));
+    }
+
+    delete f;
+    delete h2;
+    
+    return hfit;
+}
+// fit to a BennettFunc
+TH1D* FitMethod4(TH1D *h, TF1* core){
+    
+    TF1* f = new TF1("fbennett", BennettFunc, 0.0, 3.0, 7);
+
+    TH1D *h2 = (TH1D*)h->Clone();
+    for(int i=5; i<=h2->GetNbinsX()-4; i++){
+        h2->SetBinContent(i,h->Integral(i-4,i+4));
+    }
+
+    int maxbin = h2->GetMaximumBin();
+    float max = h->Integral(maxbin-1, maxbin+1) / 3.0;
+    float center = h->GetBinCenter(maxbin);
+    float rms = h->GetRMS();
+
+    // fit to gaussian first
+    TF1 *fgaus = new TF1("fgaus", "gaus", center-1.0*rms, center+1.0*rms);
+    fgaus->SetParameters(max, center, rms);
+    fgaus->SetParLimits(0, 0.97*max, 1.03*max);
+    fgaus->SetParLimits(1, center-0.03, center+0.03);
+    h->Fit(fgaus, "QNRM", "goff");
+    
+    f->FixParameter(0, fgaus->GetParameter(0));
+    f->FixParameter(1, fgaus->GetParameter(1));
+    f->FixParameter(2, fgaus->GetParameter(2));
+
+    // fit left tail
+    f->SetParameter(3, 2.);
+    f->FixParameter(4, 2.);
+    f->SetParameter(5, rms / 2.);
+    f->FixParameter(6, rms / 2.);
+    f->SetParLimits(3,0.5,5.);
+    f->SetParLimits(5,0.,3.);
+    h->Fit(f, "QNRM", "goff", 0.0, 1.0);
+
+    // fit right tail
+    f->FixParameter(3, f->GetParameter(3));
+    f->ReleaseParameter(4);
+    f->FixParameter(5, f->GetParameter(5));
+    f->ReleaseParameter(6);
+    f->SetParLimits(4,0.5,5.);
+    f->SetParLimits(6,0.,3.);
+    h->Fit(f, "QNRM", "goff", 1.0, 3.0);
+
+    f->SetNpx(300);
+    TH1D* hfit = (TH1D*)f->GetHistogram()->Clone();
+
+    // cout << f->GetParameter(0) << " " << f->GetParameter(1) << " " << f->GetParameter(2) << " " << f->GetParameter(3) << " " << f->GetParameter(4) << endl;
+    // double xp[] = {0.5};
+    // double par[] = {1.83, 1.01, 0.19, 2, 2};
+    // cout << BennettFunc(xp, par) << endl;
+    // cout << f->Eval(0.5) << endl;
 
     // TCanvas *c = new TCanvas();
     // f->Draw();
@@ -406,6 +487,38 @@ double DoubleCrystalBall(double *xp, double *par) {
         double A2 = pow(n2/fabs(alpha2), n2)*exp(-alpha2*alpha2/2);
         double B2 = n2/fabs(alpha2) - fabs(alpha2);
         return scale*A2*pow(B2+t, -n2);
+    }else{
+        cout << "ERROR: shouldn't get here !!!!!! " << mean << " " << width << " " << alpha1 << " " << alpha2 << endl;
+        return 9999;
+    }
+        
+}
+
+double BennettFunc(double *xp, double *par) {
+    // par = {scale, mean, width, alpha1, alpha2, beta1, beta2}
+
+    double scale = par[0];
+    double mean = par[1];
+    double width = par[2];
+    double alpha1 = par[3];
+    double alpha2 = par[4];
+    double beta1 = par[5];
+    double beta2 = par[6];
+
+    double x = xp[0];
+    double t = (x-mean)/width;
+    if(t >= -alpha1 && t <= alpha2){
+        return scale*exp(-0.5*t*t);
+    }else if(t < -alpha1){
+        double A1 = scale * exp(-alpha1*alpha1/2.0);
+        // double B1 = width / alpha1;
+        double B1 = beta1;
+        return A1*exp((x + alpha1*width - mean) / B1);
+    }else if(t > alpha2){
+        double A2 = scale * exp(-alpha2*alpha2/2.0);
+        // double B2 = width / alpha2;
+        double B2 = beta2;
+        return A2*exp(-(x - alpha2*width - mean) / B2);
     }else{
         cout << "ERROR: shouldn't get here !!!!!! " << mean << " " << width << " " << alpha1 << " " << alpha2 << endl;
         return 9999;
