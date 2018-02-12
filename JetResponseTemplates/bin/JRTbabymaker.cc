@@ -183,10 +183,10 @@ int main(int argc, char* argv[])
 
                 // set up JECs
                 string jecDir = string(getenv("CMSSW_BASE")) + "/src/JetResponseTemplates/JetResponseTemplates/jecs/";                    
-                JetCorrectorParameters *ResJetPar = new JetCorrectorParameters(jecDir+"Spring16_25nsV6_MC_L2L3Residual_AK4PFchs.txt"); 
-                JetCorrectorParameters *L3JetPar  = new JetCorrectorParameters(jecDir+"Spring16_25nsV6_MC_L3Absolute_AK4PFchs.txt");
-                JetCorrectorParameters *L2JetPar  = new JetCorrectorParameters(jecDir+"Spring16_25nsV6_MC_L2Relative_AK4PFchs.txt");
-                JetCorrectorParameters *L1JetPar  = new JetCorrectorParameters(jecDir+"Spring16_25nsV6_MC_L1FastJet_AK4PFchs.txt");
+                JetCorrectorParameters *ResJetPar = new JetCorrectorParameters(jecDir+"Fall17_17Nov2017_V4_MC_L2L3Residual_AK4PFchs.txt"); 
+                JetCorrectorParameters *L3JetPar  = new JetCorrectorParameters(jecDir+"Fall17_17Nov2017_V4_MC_L3Absolute_AK4PFchs.txt");
+                JetCorrectorParameters *L2JetPar  = new JetCorrectorParameters(jecDir+"Fall17_17Nov2017_V4_MC_L2Relative_AK4PFchs.txt");
+                JetCorrectorParameters *L1JetPar  = new JetCorrectorParameters(jecDir+"Fall17_17Nov2017_V4_MC_L1FastJet_AK4PFchs.txt");
                 vector<JetCorrectorParameters> vPar;
                 vPar.push_back(*L1JetPar);
                 vPar.push_back(*L2JetPar);

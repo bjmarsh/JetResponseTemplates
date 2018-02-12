@@ -1,8 +1,8 @@
 rm ./input.tar.gz
-tar -hcf input.tar --exclude='.git' --exclude='*.root' --exclude='PhysicsTools' --exclude='batchsubmit' ../../../../../CMSSW_8_0_11
+tar -hcf input.tar --exclude='.git' --exclude='*.root' --exclude='PhysicsTools' --exclude='batchsubmit' ../../../../../CMSSW_9_4_1
 gzip ./input.tar
 
-TAG=92x_v1
+TAG=94x_v1
 
 while read LINE; do
     echo $LINE $TAG

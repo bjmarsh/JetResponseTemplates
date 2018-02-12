@@ -27,9 +27,9 @@ echo "[wrapper] linux timestamp = " `date +%s`
 echo "[wrapper] extracting input sandbox"
 tar -zxf input.tar.gz
 
-export SCRAM_ARCH=slc6_amd64_gcc530
+export SCRAM_ARCH=slc6_amd64_gcc630
 source /cvmfs/cms.cern.ch/cmsset_default.sh
-cd CMSSW_9_2_8/src/JetResponseTemplates/JetResponseTemplates
+cd CMSSW_9_4_1/src/JetResponseTemplates/JetResponseTemplates
 echo "[wrapper] in directory: " ${PWD}
 echo "[wrapper] attempting to build"
 eval `scramv1 runtime -sh`
