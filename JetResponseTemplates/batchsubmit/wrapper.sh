@@ -29,7 +29,7 @@ tar -zxf input.tar.gz
 
 export SCRAM_ARCH=slc6_amd64_gcc530
 source /cvmfs/cms.cern.ch/cmsset_default.sh
-cd CMSSW_8_0_11/src/JetResponseTemplates/JetResponseTemplates
+cd CMSSW_9_2_8/src/JetResponseTemplates/JetResponseTemplates
 echo "[wrapper] in directory: " ${PWD}
 echo "[wrapper] attempting to build"
 eval `scramv1 runtime -sh`
@@ -94,7 +94,7 @@ if [ ! -d "${COPYDIR}" ]; then
     mkdir ${COPYDIR}
 fi
 
-gfal-copy -p -f -t 4200 --verbose file:`pwd`/${OUTPUT} srm://bsrm-3.t2.ucsd.edu:8443/srm/v2/server?SFN=${COPYDIR}/${FILEID}.root
+gfal-copy -p -f -t 4200 --verbose file://`pwd`/${OUTPUT} gsiftp://gftp.t2.ucsd.edu${COPYDIR}/${FILEID}.root
 
 echo "[wrapper] cleaning up"
 for FILE in `find . -not -name "*stderr" -not -name "*stdout"`; do rm -rf $FILE; done
