@@ -54,7 +54,7 @@ if [ ! -f input.tar.gz ]; then
 fi
 
 COPYDIR=/hadoop/cms/store/user/${USERNAME}/JRTbabies/${TAG}/${COPYDIRBASE}
-echo "[writeConfig] running on dataset ${DATADIR}"
+echo "[writeConfig] running on dataset ${AODSAMPLE}"
 echo "[writeConfig] copying output to ${COPYDIR}"
 
 if [ ! -d "${COPYDIR}" ]; then
@@ -62,9 +62,8 @@ if [ ! -d "${COPYDIR}" ]; then
     mkdir -p ${COPYDIR}
 fi
 
-#
 # write configuration
-#
+
    
 #Grid_Resource=gt2 osg-gw-6.t2.ucsd.edu:2119/jobmanager-condor
 Grid_Resource="condor cmssubmit-r1.t2.ucsd.edu glidein-collector.t2.ucsd.edu"

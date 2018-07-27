@@ -1,4 +1,5 @@
 #include <vector>
+#include <cmath>
 
 #include <TH1F.h>
 #include <TROOT.h>
@@ -21,6 +22,13 @@
 #include "DataFormats/VertexReco/interface/Vertex.h"
 #include "DataFormats/METReco/interface/GenMET.h"
 #include "DataFormats/METReco/interface/PFMET.h"
+#include "DataFormats/MuonReco/interface/Muon.h"
+#include "DataFormats/MuonReco/interface/MuonSelectors.h"
+#include "DataFormats/TrackReco/interface/Track.h"
+#include "DataFormats/ParticleFlowCandidate/interface/PFCandidate.h"
+#include "DataFormats/Math/interface/deltaR.h"
+#include "DataFormats/Common/interface/TriggerResults.h"
+#include "FWCore/Common/interface/TriggerNames.h"
 
 #include "SimDataFormats/JetMatching/interface/JetFlavour.h"
 #include "SimDataFormats/JetMatching/interface/JetFlavourMatching.h"
@@ -39,10 +47,12 @@ using namespace std;
 // capable of reading edm::Views
 using reco::GenJet;
 using reco::GenParticle;
+using reco::PFCandidate;
 using reco::PFJet;
 using reco::Vertex;
 using reco::PFMET;
 using reco::GenMET;
+using reco::Muon;
 
 vector<int> getCandidates(vector<const GenParticle*> constituents, vector<const GenParticle*> genps, float jet_pt, float jet_eta, float jet_phi, vector<const GenParticle*>* found);
 int getFlavourBennett(vector<int> match_cands, vector<const GenParticle*> genps);
@@ -71,10 +81,13 @@ int main(int argc, char* argv[])
     edm::InputTag genJetsTag ("ak4GenJets");
     edm::InputTag recoJetsTag ("ak4PFJetsCHS");
     edm::InputTag genParticlesTag ("genParticles");
+    edm::InputTag pfcandsTag ("particleFlow");
     edm::InputTag fixedGridRhoTag ("fixedGridRhoFastjetAll");
     edm::InputTag vertexTag ("offlinePrimaryVertices");
     edm::InputTag pfmetTag ("pfMet");
     edm::InputTag genmetTag ("genMetTrue");
+    edm::InputTag muonTag ("muons");
+    edm::InputTag filtersTag ("TriggerResults", "", "RECO");
 
     TFile *fout = new TFile(outputHandler_.file().c_str(),"RECREATE");
 
@@ -134,6 +147,14 @@ int main(int argc, char* argv[])
                 event.getByLabel(vertexTag, vertexHandle);
                 t.evt_nvertices = vertexHandle.product()->size();
 
+                // Handle to the muon collection
+                edm::Handle< vector<Muon> > muons;
+                event.getByLabel(muonTag, muons);
+
+                // Handle to the pfcand collection
+                edm::Handle< vector<PFCandidate> > pfcands;
+                event.getByLabel(pfcandsTag, pfcands);
+
                 // Handle to the PFMET
                 edm::Handle< vector<PFMET> > pfmetHandle;
                 event.getByLabel(pfmetTag, pfmetHandle);
@@ -147,6 +168,10 @@ int main(int argc, char* argv[])
                 GenMET genmet = genmetHandle.product()->at(0);
                 double genmet_pt = genmet.pt();
                 double genmet_phi = genmet.phi();
+
+                // Handle for filters
+                edm::Handle<edm::TriggerResults> filtersHandle;
+                event.getByLabel(filtersTag, filtersHandle);
 
                 // fill a vector of genps for convenience
                 vector<const GenParticle*> genps;
@@ -174,11 +199,20 @@ int main(int argc, char* argv[])
                     vector<const GenParticle*>* found = new vector<const GenParticle*>;
                     vector<int> match_cands = getCandidates(constituents, genps, jet_pt, jet_eta, jet_phi, found);
                     int flavourBennett = getFlavourBennett(match_cands, genps);
+                    // int flavourBennett = 0;
                     int flavourCMSSW = getFlavourCMSSW(genps, jet_pt, jet_eta, jet_phi);
                     delete found;
 
                     t.genjet_flavour_bennett->push_back(flavourBennett);
                     t.genjet_flavour_cmssw->push_back(flavourCMSSW);
+
+                    float gj_muFrac = 0.0;
+                    for(uint ic=0; ic<constituents.size(); ic++){
+                        if(constituents.at(ic)->status()==1 && abs(constituents.at(ic)->pdgId())==13)
+                            gj_muFrac += constituents.at(ic)->energy();
+                    }
+                    gj_muFrac /= gj->energy();
+                    t.genjet_muFrac->push_back((char)round(100*gj_muFrac));
                 }
 
                 // set up JECs
@@ -227,12 +261,14 @@ int main(int argc, char* argv[])
                     float nhf = rj->neutralHadronEnergy()/energy;
                     float cef = rj->chargedEmEnergy()/energy;
                     float nef = rj->neutralEmEnergy()/energy;
+                    float muf = rj->muonEnergy()/energy;
+                    float elf = rj->electronEnergy()/energy;
                     float cm = rj->chargedMultiplicity();
                     float nm = rj->neutralMultiplicity();
 
                     // do jet ID
-                    int isLoosePFJet = true;
-                    int isTightPFJet = true;
+                    bool isLoosePFJet = true;
+                    bool isTightPFJet = true;
                     if(eta < 3.0){
                         if(nhf >= 0.99) isLoosePFJet = false;
                         if(nef >= 0.99) isLoosePFJet = false;
@@ -249,7 +285,12 @@ int main(int argc, char* argv[])
                         if(!(nm > 10)) isLoosePFJet = false;
                     }
                     isTightPFJet = isTightPFJet && isLoosePFJet;
-                        
+
+                    int leadingPFCandId;
+                    if(rj->getPFConstituents().size() > 0)
+                        leadingPFCandId = rj->getPFConstituents().at(0).get()->pdgId();
+                    else
+                        leadingPFCandId = 0;
 
                     // fill the tree variables for later filling;
                     t.recojet_pt->push_back(pt_cor);
@@ -258,9 +299,16 @@ int main(int argc, char* argv[])
                     t.recojet_phi->push_back(phi);
                     t.recojet_area->push_back(rj->jetArea());
                     t.recojet_isLoosePFJet->push_back(isLoosePFJet);
-                    t.recojet_isTightPFJet->push_back(isTightPFJet);
-                    
-                } // recojet loop
+                    t.recojet_isTightPFJet->push_back(isTightPFJet);                    
+                    t.recojet_cemFrac->push_back((char)round(100*cef));
+                    t.recojet_nemFrac->push_back((char)round(100*nef));
+                    t.recojet_chFrac->push_back((char)round(100*chf));
+                    t.recojet_nhFrac->push_back((char)round(100*nhf));
+                    t.recojet_muFrac->push_back((char)round(100*muf));
+                    t.recojet_elFrac->push_back((char)round(100*elf));
+                    t.recojet_leadingPFCandId->push_back(leadingPFCandId);
+
+                } // recojet loop                
 
                 //clean up
                 delete ResJetPar;
@@ -279,6 +327,74 @@ int main(int argc, char* argv[])
                 t.genmet_pt = genmet_pt;
                 t.genmet_phi = genmet_phi;
                 
+                edm::TriggerNames filterNames = event.triggerNames(*filtersHandle);
+                for(uint i=0; i<filterNames.size(); i++){
+                    cout << "FILTER: " << filterNames.triggerName(i) << endl;
+                }
+
+                // filters for badly reconstructed things
+                t.Flag_badMuonFilterV2 = true;
+                t.Flag_badMuonFilterV2_loose = true;
+                t.Flag_badChargedCandidateFilterV2 = true;
+                for(vector<reco::Muon>::const_iterator m = muons->begin(); m!= muons->end(); m++){
+                    reco::TrackRef tk = m->innerTrack();
+                    reco::TrackRef bt = m->muonBestTrack();
+                    float tk_pt = tk.isNonnull() ? tk->pt() : -9999;
+                    float tk_ptErr = tk.isNonnull() ? tk->ptError() : -9999;
+                    int tk_algo = tk.isNonnull() ? tk->algo() : -9999;
+                    int tk_algoOrig = tk.isNonnull() ? tk->originalAlgo() : -9999;
+                    float m_segmComp = muon::segmentCompatibility(*m);
+                    float bt_pt = bt.isNonnull() ? bt->pt() : -9999;
+                    float bt_ptErr = bt.isNonnull() ? bt->ptError() : -9999;
+            
+                    bool fails_seg_compatibility = m_segmComp < 0.3;
+                    bool fails_best_track_ptrelerr = bt_ptErr / bt_pt > 2.0;
+                    bool fails_inner_track_ptrelerr = tk_ptErr / tk_pt > 1.0;                    
+
+                    if(fails_seg_compatibility || fails_best_track_ptrelerr || fails_inner_track_ptrelerr){
+                        // badMuonFilter first
+                        if((m->pt() > 100.0 || tk_pt > 100.0) &&   // require one of pT > 100.0
+                           (m->type() & (1<<1)) ){               // require global muon
+
+                            for(vector<reco::PFCandidate>::const_iterator p = pfcands->begin(); p!= pfcands->end(); p++){
+                                if(abs(p->pdgId()) != 13  || p->pt() < 100.0)
+                                    continue;
+                                float dr = deltaR(p->eta(), p->phi(), m->eta(), m->phi());
+                                if(dr < 0.001){  //fails filter!
+                                    t.Flag_badMuonFilterV2_loose = false;
+                                    if (tk_algo==14 && tk_algoOrig==14)    //suspicious algorithm
+                                        t.Flag_badMuonFilterV2 = false;
+                                }
+                            }
+                        }
+                        // now badChargedCandidateFilter
+                        if((m->pt() > 100.0 || tk_pt > 100.0) &&   // require one of pT > 100.0
+                           (!m->isPFMuon()) &&                   // muon is not PF muon
+                           (m->type() & (1<<1)) ){               // require global muon
+
+                            for(vector<reco::PFCandidate>::const_iterator p = pfcands->begin(); p!= pfcands->end(); p++){
+                                if(abs(p->pdgId()) != 211)
+                                    continue;
+
+                                float dr = deltaR(p->eta(), p->phi(), m->eta(), m->phi());
+                                if(dr >= 0.00001)
+                                    continue;
+                                
+                                float diffPt = p->pt() - tk_pt;
+                                float avgPt = 0.5*(p->pt() + tk_pt);
+                                if(fabs(diffPt) / avgPt >= 0.00001)
+                                    continue;
+
+                                //fails filter!
+                                t.Flag_badChargedCandidateFilterV2 = false;
+                            }
+                        }
+                    }
+                }
+
+                // cout << t.evt_run << ":" << t.evt_lumi << ":" << t.evt_event << " " << Flag_badMuonFilterV2 << " " << Flag_badMuonFilterV2_loose << " " << Flag_badChargedCandidateFilterV2 << " " << t.genjet_muFrac->at(0) << endl;
+                
+
                 t.Fill();
             }  // event loop
 
@@ -302,14 +418,6 @@ int main(int argc, char* argv[])
     return 0;
 }
 
-float DeltaR(float eta1, float phi1, float eta2, float phi2){
-    float dphi = fabs(phi1-phi2);
-    const float PI = 3.14159265359;
-    if(dphi > PI)
-        dphi = 2*PI - dphi;
-    return sqrt((eta1-eta2)*(eta1-eta2) + dphi*dphi);
-}
-
 vector<int> getCandidates(vector<const GenParticle*> constituents, vector<const GenParticle*> genps, float jet_pt, float jet_eta, float jet_phi, vector<const GenParticle*>* found){
 
     vector<int> cands;
@@ -325,7 +433,7 @@ vector<int> getCandidates(vector<const GenParticle*> constituents, vector<const 
         else
             continue;
 
-        float dr = DeltaR(jet_eta, jet_phi, p->eta(), p->phi());
+        float dr = deltaR(jet_eta, jet_phi, p->eta(), p->phi());
 
         int idx = -1;
         vector<const GenParticle*>::const_iterator loc = find(genps.begin(), genps.end(), p);
@@ -472,7 +580,7 @@ int getFlavourCMSSW(vector<const GenParticle*> genps, float jet_pt, float jet_et
     for(unsigned int ip=0; ip<partons.size(); ip++){
         const GenParticle *p = partons.at(ip);
         int id = abs(p->pdgId());
-        float dr = DeltaR(jet_eta, jet_phi, p->eta(), p->phi());
+        float dr = deltaR(jet_eta, jet_phi, p->eta(), p->phi());
         if(dr < dr_cut){
             if(match==-1 && id==4) match = 4;
             if(             id==5) match = 5;

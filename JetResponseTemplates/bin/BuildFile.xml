@@ -19,4 +19,5 @@
   <bin   file="JRTprintjets.cc"></bin>
   <bin   file="JRTaddFits.cc"></bin>
   <bin   file="JRTsmeartest.cc"></bin>
+  <bin   file="JRTdebug.cc"></bin>
 </environment>

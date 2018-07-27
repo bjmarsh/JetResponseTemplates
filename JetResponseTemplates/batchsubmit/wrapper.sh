@@ -43,11 +43,11 @@ echo "LD_LIBRARY_PATH: " $LD_LIBRARY_PATH
 ls ../../../bin/slc6_amd64_gcc530
 
 cd test
-sed -i -- "s#PUTFILENAMEHERE#${FILE}#g" condor_template_cfg.py
+sed -i -- "s#PUTFILENAMEHERE#${FILE}#g" condor_template_2_cfg.py
 
 echo "[wrapper] running: JRTbabymaker condor_template_cfg.py"
 
-JRTbabymaker condor_template_cfg.py
+cmsRun -n4 condor_template_2_cfg.py
 
 if [ ! -f out.root ]; then
     # if it doesn't exist, try again
@@ -67,6 +67,11 @@ if [ -f out.root ]; then
     SIZE=`stat --printf="%s\n" out.root`
     if [ "$SIZE" -lt 10000 ]; then
         echo "[wrapper] still invalid output. quitting."
+        rm out.root
+    fi
+    RES=`python -c "import ROOT as r;f=r.TFile(\"out.root\");print 1 if f.IsZombie() else 0"`
+    if [ "$RES" -eq 1 ]; then
+        echo "[wrapper] file is a zombie. quitting."
         rm out.root
     fi
 else

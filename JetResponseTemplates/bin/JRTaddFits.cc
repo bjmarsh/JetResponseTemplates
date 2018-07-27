@@ -20,6 +20,7 @@ TH1D* FitMethod1(TH1D *h, TF1* core=NULL);
 TH1D* FitMethod2(TH1D *h, int degree=1, int window=8);
 TH1D* FitMethod3(TH1D *h, TF1* core=NULL);
 TH1D* FitMethod4(TH1D *h, TF1* core=NULL);
+TH1D* StraightTemplate(TH1D *h, TF1* core=NULL);
 
 double DoubleCrystalBall(double *xp, double *par);
 double BennettFunc(double *xp, double *par);
@@ -169,6 +170,12 @@ int main(int argc, char* argv[])
                 ////// METHOD 4 (bennett func) /////////////////////////////////
 
                 h_fit = FitMethod4(h, core);
+
+                //////////////////////////////////////////////////////////////////////
+
+                ////// METHOD 5 (straight template w/ core fit) /////////////////////////////////
+
+                // h_fit = StraightTemplate(h, core);
 
                 //////////////////////////////////////////////////////////////////////
 
@@ -462,6 +469,40 @@ TH1D* FitMethod4(TH1D *h, TF1* core){
     return hfit;
 }
 
+TH1D* StraightTemplate(TH1D* h, TF1* core){
+    TH1D* hfit = new TH1D("hfit", "", 300,0,3);
+    hfit->SetBinContent(1, h->GetBinContent(1) / 2.0);
+    hfit->SetBinError(1, h->GetBinError(1) / 2.0);
+    hfit->SetBinContent(300, h->GetBinContent(150) / 2.0);
+    hfit->SetBinError(300, h->GetBinError(150) / 2.0);
+    for(int i=2; i<300; i++){
+        if(i%2==0){
+            hfit->SetBinContent(i, 3./4*h->GetBinContent(i/2) + 1./4*h->GetBinContent(i/2+1));
+            hfit->SetBinError(i, 3./4*h->GetBinError(i/2) + 1./4*h->GetBinError(i/2+1));
+        }else{
+            hfit->SetBinContent(i, 1./4*h->GetBinContent((i-1)/2) + 3./4*h->GetBinContent((i-1)/2+1));
+            hfit->SetBinError(i, 1./4*h->GetBinError((i-1)/2) + 3./4*h->GetBinError((i-1)/2+1));
+        }        
+    }
+
+    hfit->Scale(1.0 / hfit->Integral() / hfit->GetBinWidth(1));
+
+    float max = hfit->GetBinContent(hfit->GetMaximumBin());
+    float mean = hfit->GetBinCenter(hfit->GetMaximumBin());
+    float rms = hfit->GetRMS();
+    // if(rms > 0.1)
+    //     rms *= 0.5;
+    core->SetRange(mean-rms, mean+rms);
+    core->SetParameters(max, mean, min(rms,0.1f));
+    core->SetParLimits(0, max-0.003, max+0.003);
+    core->SetParLimits(1, mean-0.02, mean+0.02);
+    hfit->Fit(core, "QNR", "goff");
+
+    return hfit;
+
+}
+
+
 double DoubleCrystalBall(double *xp, double *par) {
     // par = {scale, mean, width, alpha1, alpha2, n1, n2}
 
@@ -525,3 +566,4 @@ double BennettFunc(double *xp, double *par) {
     }
         
 }
+

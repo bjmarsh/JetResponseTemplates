@@ -57,13 +57,14 @@ int main(int argc, char* argv[])
     // loop the events
     int ievt=0;  
     int maxEvents_( inputHandler_.maxEvents() );
+    int startEvent = process.getParameter<int>("startEvent");
     for(unsigned int iFile=0; iFile<inputHandler_.files().size(); ++iFile){
 
         TFile* inFile = TFile::Open(inputHandler_.files()[iFile].c_str());
         if( inFile ){
 
             fwlite::Event ev(inFile);
-            for(ev.toBegin(); !ev.atEnd(); ++ev, ++ievt){
+            for(ev.to(startEvent); !ev.atEnd(); ++ev, ++ievt){
                 edm::EventBase const & event = ev;
                 // break loop if maximal number of events is reached 
                 if(maxEvents_>0 ? ievt+1>maxEvents_ : false) break;

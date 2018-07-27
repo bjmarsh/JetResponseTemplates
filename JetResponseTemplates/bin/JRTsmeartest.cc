@@ -397,7 +397,7 @@ void computeJetVars(string jettype, float met_pt, float met_phi, float *results)
     vector<float> *pt = NULL;
     vector<float> *eta = NULL;
     vector<float> *phi = NULL;
-    vector<int> *jetID = NULL;
+    vector<bool> *jetID = NULL;
 
     if(jettype=="reco"){
         pt = t.recojet_pt;

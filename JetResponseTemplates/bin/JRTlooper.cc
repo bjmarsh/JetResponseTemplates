@@ -1,6 +1,9 @@
 #include <vector>
+#include <utility>
 #include <iostream>
+#include <map>
 
+#include <TString.h>
 #include <TH1D.h>
 #include <TROOT.h>
 #include <TFile.h>
@@ -10,6 +13,8 @@
 #include <TString.h>
 #include <TDirectory.h>
 
+#include "DataFormats/Math/interface/deltaR.h"
+
 #include "JetResponseTemplates/JetResponseTemplates/interface/JRTTree.h"
 
 using namespace std;
@@ -17,11 +22,63 @@ using namespace std;
 int getBin(float val, float *bins, int n_bins);
 int getSampleID(const char* filename);
 
+std::map<string,float> scale1fbs;
+
 int main(int argc, char* argv[]) 
 {
+    //94x_v4
+    scale1fbs["qcd_pt15to30"] = 93725.1903008;
+    scale1fbs["qcd_pt30to50"] = 7082.53323235;
+    scale1fbs["qcd_pt50to80"] = 996.933558355;
+    scale1fbs["qcd_pt80to120"] = 96.5446073005;
+    scale1fbs["qcd_pt120to170"] = 17.7596096037;
+    scale1fbs["qcd_pt170to300"] = 3.96138811936;
+    scale1fbs["qcd_pt300to470"] = 0.152583000237;
+    scale1fbs["qcd_pt470to600"] = 0.024749609703;
+    scale1fbs["qcd_pt600to800"] = 0.00446736336501;
+    scale1fbs["qcd_pt800to1000"] = 0.000865341241033;
+    scale1fbs["qcd_pt1000to1400"] = 0.000491061664129;
+    scale1fbs["qcd_pt1400to1800"] = 0.000148823873705;
+    scale1fbs["qcd_pt1800to2400"] = 3.93109847292e-05;
+    scale1fbs["qcd_pt2400to3200"] = 3.57483227132e-06;
+    scale1fbs["qcd_pt3200toInf"] = 2.22306874724e-07;
 
-    if(argc==1){
-        cout << "USAGE: JRTlooper <files to run over>" << endl;
+    // // 94x_v3
+    // scale1fbs["qcd_pt15to30"] = 92359.4370056;
+    // scale1fbs["qcd_pt30to50"] = 7062.65518089;
+    // scale1fbs["qcd_pt50to80"] = 998.93055138;
+    // scale1fbs["qcd_pt80to120"] = 95.9371434303;
+    // scale1fbs["qcd_pt120to170"] = 17.5217342403;
+    // scale1fbs["qcd_pt170to300"] = 3.93335209297;
+    // scale1fbs["qcd_pt300to470"] = 0.167573386562;
+    // scale1fbs["qcd_pt470to600"] = 0.0245364198903;
+    // scale1fbs["qcd_pt600to800"] = 0.00575903530705;
+    // scale1fbs["qcd_pt800to1000"] = 0.000448080395999;
+    // scale1fbs["qcd_pt1000to1400"] = 0.000479746802817;
+    // scale1fbs["qcd_pt1400to1800"] = 0.0001482163556;
+    // scale1fbs["qcd_pt1800to2400"] = 3.93109847292e-05;
+    // scale1fbs["qcd_pt2400to3200"] = 3.57483227132e-06;
+    // scale1fbs["qcd_pt3200toInf"] = 2.18312117249e-07;
+
+    // // 94x_v1
+    // scale1fbs["qcd_pt15to30"] = 93852.4286623;
+    // scale1fbs["qcd_pt30to50"] = 7415.76025329;
+    // scale1fbs["qcd_pt50to80"] = 1018.98771487;
+    // scale1fbs["qcd_pt80to120"] = 98.0586131763;
+    // scale1fbs["qcd_pt120to170"] = 18.2311320554;
+    // scale1fbs["qcd_pt170to300"] = 4.03694925931;
+    // scale1fbs["qcd_pt300to470"] = 0.151891935111;
+    // scale1fbs["qcd_pt470to600"] = 0.0253071903264;
+    // scale1fbs["qcd_pt600to800"] = 0.00294326852284;
+    // scale1fbs["qcd_pt800to1000"] = 0.000883412622441;
+    // scale1fbs["qcd_pt1000to1400"] = 0.000485938016757;
+    // scale1fbs["qcd_pt1400to1800"] = 0.0001482163556;
+    // scale1fbs["qcd_pt1800to2400"] = 3.94495195583e-05;
+    // scale1fbs["qcd_pt2400to3200"] = 3.57483227132e-06;
+    // scale1fbs["qcd_pt3200toInf"] = 2.18312117249e-07;
+
+    if(argc<3){
+        cout << "USAGE: JRTlooper <tag> <files to run over>" << endl;
         return 1;
     }
 
@@ -33,9 +90,9 @@ int main(int argc, char* argv[])
 
 
     // setup histograms
-    TH1D* h_n_matches = new TH1D("h_n_matches","N reco jets matched to each gen jet", 5, 0, 5);
     TH1D* h_pileup = new TH1D("h_pileup",";n vertices",40,0,40);
-
+    TH1D* h_dr = new TH1D("h_dr",";dR(reco,gen)",100,0,0.5);
+    
     vector< vector<TH1D*>* > *JRTs_b = new vector< vector<TH1D*>* >;
     vector< vector<TH1D*>* > *JRTs_l = new vector< vector<TH1D*>* >;
     vector< vector<TH1D*>* > *JRTs_a = new vector< vector<TH1D*>* >;
@@ -59,7 +116,7 @@ int main(int argc, char* argv[])
 
     TChain *chain = new TChain("Events");
 
-    for(int i=1; i<argc; i++)
+    for(int i=2; i<argc; i++)
         chain->Add(argv[i]);
 
     unsigned int nEventsTotal = 0;
@@ -82,17 +139,47 @@ int main(int argc, char* argv[])
         tree->SetCacheSize(128*1024*1024);
         t.Init(tree);
 
-        // branch for scale1fb is not in JRTTree
         float scale;
-        tree->SetBranchAddress("evt_scale1fb", &scale);
+
+        // branch for scale1fb is not in JRTTree
+        // tree->SetBranchAddress("evt_scale1fb", &scale);
+
+        TString title (currentFile->GetTitle());
+        int i1 = title.Index("qcd_pt");
+        int i2 = title.Index("_",i1+5);
+        if(i2==-1)
+            i2 = title.Index(".",i1);
+        TString samp(title(i1,i2-i1));
+        scale = scale1fbs[samp.Data()];
+        cout << "    " << scale << endl;
 
         unsigned int nEventsTree = tree->GetEntriesFast();
+        // nEventsTree = 10000.;
         for( unsigned int event = 0; event < nEventsTree; ++event) {
     
             // Get Event Content
             Long64_t tentry = tree->LoadTree(event);
             t.GetEntry(tentry);
             ++nEventsTotal;
+            
+            if(nEventsTotal%100000==0)
+            // if(nEventsTotal%1==0)
+                cout << "Processed " << nEventsTotal << " / " << nEventsChain << " events\n";
+
+            if(!t.Flag_badMuonFilterV2 || !t.Flag_badChargedCandidateFilterV2)
+                continue;
+            if(!t.Flag_ecalDeadCellTriggerPrimitiveFilter)
+                continue;
+            if(!t.Flag_hbheNoiseFilter)
+                continue;
+            if(!t.Flag_hbheNoiseIsoFilter)
+                continue;
+            if(!t.Flag_eeBadScFilter)
+                continue;
+
+            vector<pair<uint,uint> > matches;
+            vector<uint> counts_gj (t.n_genjet, 0);
+            vector<uint> counts_rj (t.n_recojet, 0);
 
             //ANALYSIS CODE HERE
             for(unsigned int igj=0; igj<t.genjet_pt->size(); igj++){
@@ -100,8 +187,6 @@ int main(int argc, char* argv[])
                 float gj_eta = t.genjet_eta->at(igj);
                 float gj_phi = t.genjet_phi->at(igj);
                 
-                int nmatches = 0;
-                int match_idx = -1;
                 for(unsigned int irj=0; irj<t.recojet_pt->size(); irj++){
                     float rj_pt = t.recojet_pt->at(irj);
                     float rj_eta = t.recojet_eta->at(irj);
@@ -110,47 +195,76 @@ int main(int argc, char* argv[])
                     // reject recojets with pT < 10 GeV
                     if(rj_pt < 10) continue;
                     
-                    float dr = sqrt((rj_eta-gj_eta)*(rj_eta-gj_eta) + (rj_phi-gj_phi)*(rj_phi-gj_phi));
+                    float dr = deltaR(rj_eta, rj_phi, gj_eta, gj_phi);
                     if(dr < 0.3){
-                        // found a match!
-                        nmatches++;
-                        match_idx = irj;
+                        matches.push_back(pair<uint,uint>(igj,irj));
+                    }
+                    if(dr < 0.5){
+                        counts_gj[igj]++;
+                        counts_rj[irj]++;
                     }
                 }//recojet loop
 
-                h_n_matches->Fill(nmatches);
+            } // genjet loop
 
-                if(nmatches == 1){
-                    float ratio = t.recojet_pt->at(match_idx) / t.genjet_pt->at(igj);
-                    int pt_bin = getBin(t.genjet_pt->at(igj), pt_bins, n_pt_bins);
-                    int eta_bin = getBin(fabs(t.genjet_eta->at(igj)), eta_bins, n_eta_bins);
-                    if(pt_bin==-1 || eta_bin==-1){
-                        cout << "WARNING: bad genjet at event # " << event << endl;
-                        continue;
-                    }
-                    if(t.genjet_flavour_cmssw->at(igj) == 5){
-                        JRTs_b->at(pt_bin)->at(eta_bin)->Fill(ratio, scale);
-                    }else if(t.genjet_flavour_cmssw->at(igj) >= 1){
-                        JRTs_l->at(pt_bin)->at(eta_bin)->Fill(ratio, scale);
-                    }
-                    
-                    if(t.genjet_flavour_cmssw->at(igj) > 0)
-                        JRTs_a->at(pt_bin)->at(eta_bin)->Fill(ratio, scale);
+            uint nmatches = matches.size();
+            for(uint imatch=0; imatch<nmatches; imatch++){
 
-                }//recojet loop
+                uint igj = matches[imatch].first;
+                uint irj = matches[imatch].second;
+                if(counts_gj[igj] != 1 || counts_rj[irj] != 1)
+                    continue;
+                
+                float ratio = t.recojet_pt->at(irj) / t.genjet_pt->at(igj);
+                int pt_bin = getBin(t.genjet_pt->at(igj), pt_bins, n_pt_bins);
+                int eta_bin = getBin(fabs(t.genjet_eta->at(igj)), eta_bins, n_eta_bins);
+                if(pt_bin==-1 || eta_bin==-1){
+                    cout << "WARNING: bad genjet at event # " << event << endl;
+                    continue;
+                }
 
-            }//genjet loop
+                h_dr->Fill(deltaR(t.genjet_eta->at(igj), t.genjet_phi->at(igj), t.recojet_eta->at(irj), t.recojet_phi->at(irj)), scale);
+
+                // if(abs(t.recojet_leadingPFCandId->at(irj)) == 13 && t.recojet_muFrac->at(irj) > 50 && t.genjet_muFrac->at(igj) == 0 && t.recojet_pt->at(irj)*0.01*t.recojet_muFrac->at(irj) > 100.0){
+                //         cout << "[JRTlooper] matched muonic rj/non-muonic gj: " << t.evt_run << ":" << t.evt_lumi << ":" << t.evt_event << " " << ratio << " " << t.recojet_leadingPFCandId->at(irj) << " " << 
+                //             t.Flag_badMuonFilterV2 << " " << t.Flag_badMuonFilterV2_loose << " " << t.Flag_badChargedCandidateFilterV2 << " " << 
+                //             (int)t.recojet_muFrac->at(irj) << " " << t.genjet_flavour_cmssw->at(igj) << " " << t.genjet_flavour_bennett->at(igj) << endl;
+                // }
+
+                // if(pt_bin>=6 && eta_bin<=3 && ratio >= 2.0){
+                //     cout << "[JRTlooper] high smear event: " << t.evt_run << ":" << t.evt_lumi << ":" << t.evt_event << " " << 
+                //         t.Flag_badMuonFilterV2 << " " << t.Flag_badMuonFilterV2_loose << " " << t.Flag_badChargedCandidateFilterV2 << " " << ratio << " " << 
+                //         t.recojet_leadingPFCandId->at(irj) << " " << (int)t.recojet_muFrac->at(irj) << " " << (int)t.genjet_muFrac->at(igj) << endl;
+                // }
+
+                // if(pt_bin>=8 && eta_bin<=11 && ratio <= 0.5){
+                //     cout << "[JRTlooper]  low smear event: " << t.evt_run << ":" << t.evt_lumi << ":" << t.evt_event << " " << 
+                //         t.Flag_badMuonFilterV2 << " " << t.Flag_badMuonFilterV2_loose << " " << t.Flag_badChargedCandidateFilterV2 << " " << ratio << " " << 
+                //         t.recojet_leadingPFCandId->at(irj) << " " << (int)t.recojet_muFrac->at(irj) << " " << (int)t.genjet_muFrac->at(igj) << 
+                //         " " << t.genjet_pt->at(igj) << " " << t.genjet_eta->at(igj) << " " << t.genjet_phi->at(igj) << endl;
+                // }
+
+                if(t.genjet_flavour_cmssw->at(igj) == 5){
+                    JRTs_b->at(pt_bin)->at(eta_bin)->Fill(ratio, scale);
+                }else if(t.genjet_flavour_cmssw->at(igj) >= 1){
+                    JRTs_l->at(pt_bin)->at(eta_bin)->Fill(ratio, scale);
+                }                    
+                if(t.genjet_flavour_cmssw->at(igj) > 0)
+                    JRTs_a->at(pt_bin)->at(eta_bin)->Fill(ratio, scale);
+
+            }// match loop
 
             h_pileup->Fill(t.evt_nvertices, scale);
 
         }//event loop
     }//file loop
 
-    TFile *fout = new TFile("JetResponseTemplates.root","RECREATE");
+    // TFile *fout = new TFile("JetResponseTemplates.root","RECREATE");
+    TFile *fout = new TFile(Form("looper_output/%s.root",argv[1]),"RECREATE");
     TDirectory *d_aux = fout->mkdir("auxiliary");
     d_aux->cd();
-    h_n_matches->Write();
     h_pileup->Write();
+    h_dr->Write();
 
     vector<TDirectory*>*            pt_dirs  = new vector<TDirectory*>;
     vector< vector<TDirectory*>* >* eta_dirs = new vector< vector<TDirectory*>* >;
