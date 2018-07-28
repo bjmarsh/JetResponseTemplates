@@ -48,6 +48,7 @@ fi
 
 if [ ! -f input.tar.gz ]; then
     DIR=$PWD
+    echo "[writeConfig] creating input tar file"
     tar -hcf input.tar --exclude='.git' --exclude='*.root' --exclude='PhysicsTools' --exclude='batchsubmit' ../../../../../CMSSW_8_0_11
     gzip ${DIR}/input.tar
     cd ${DIR}

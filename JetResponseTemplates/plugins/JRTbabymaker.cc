@@ -57,10 +57,10 @@ int getFlavourCMSSW(vector<const reco::GenParticle*> genps, float jet_pt, float 
 // class declaration
 //
 
-class JRTbabymaker2 : public edm::one::EDAnalyzer<>  {
+class JRTbabymaker : public edm::one::EDAnalyzer<>  {
    public:
-      explicit JRTbabymaker2(const edm::ParameterSet&);
-      ~JRTbabymaker2();
+      explicit JRTbabymaker(const edm::ParameterSet&);
+      ~JRTbabymaker();
 
       static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
 
@@ -83,6 +83,10 @@ class JRTbabymaker2 : public edm::one::EDAnalyzer<>  {
     const edm::EDGetTokenT<bool> hbheNoise_;
     const edm::EDGetTokenT<bool> hbheNoiseIso_;
     const edm::EDGetTokenT<bool> eeBadSC_;
+    const edm::EDGetTokenT<bool> badPFMuon_;
+    const edm::EDGetTokenT<bool> badChargedCandidate_;
+    const edm::EDGetTokenT<bool> globalTightHalo2016_;
+    const edm::EDGetTokenT<bool> ecalBadCalib_;
 
     JRTTree t;
     TFile *fout;
@@ -101,7 +105,7 @@ class JRTbabymaker2 : public edm::one::EDAnalyzer<>  {
 //
 // constructors and destructor
 //
-JRTbabymaker2::JRTbabymaker2(const edm::ParameterSet& iConfig) : 
+JRTbabymaker::JRTbabymaker(const edm::ParameterSet& iConfig) : 
     gj_(consumes<reco::GenJetCollection>(iConfig.getParameter<edm::InputTag>("genjets"))),
     rj_(consumes<reco::PFJetCollection>(iConfig.getParameter<edm::InputTag>("pfjets"))),
     gp_(consumes<reco::GenParticleCollection>(iConfig.getParameter<edm::InputTag>("genparticles"))),
@@ -114,7 +118,11 @@ JRTbabymaker2::JRTbabymaker2(const edm::ParameterSet& iConfig) :
     ecalTP_(consumes<bool>(iConfig.getParameter<edm::InputTag>("ecalTP"))),
     hbheNoise_(consumes<bool>(iConfig.getParameter<edm::InputTag>("hbheNoise"))),
     hbheNoiseIso_(consumes<bool>(iConfig.getParameter<edm::InputTag>("hbheNoiseIso"))),
-    eeBadSC_(consumes<bool>(iConfig.getParameter<edm::InputTag>("eeBadSC")))
+    eeBadSC_(consumes<bool>(iConfig.getParameter<edm::InputTag>("eeBadSC"))),
+    badPFMuon_(consumes<bool>(iConfig.getParameter<edm::InputTag>("badPFMuon"))),
+    badChargedCandidate_(consumes<bool>(iConfig.getParameter<edm::InputTag>("badChargedCandidate"))),
+    globalTightHalo2016_(consumes<bool>(iConfig.getParameter<edm::InputTag>("globalTightHalo2016"))),
+    ecalBadCalib_(consumes<bool>(iConfig.getParameter<edm::InputTag>("ecalBadCalib")))
 {
 
     fout = new TFile(iConfig.getParameter<string>("outFile").c_str(), "RECREATE");
@@ -124,7 +132,7 @@ JRTbabymaker2::JRTbabymaker2(const edm::ParameterSet& iConfig) :
 }
 
 
-JRTbabymaker2::~JRTbabymaker2()
+JRTbabymaker::~JRTbabymaker()
 {
     t.Write(fout);
     fout->Close();
@@ -137,7 +145,7 @@ JRTbabymaker2::~JRTbabymaker2()
 
 // ------------ method called for each event  ------------
 void
-JRTbabymaker2::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
+JRTbabymaker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
     t.Reset();
     
@@ -196,6 +204,22 @@ JRTbabymaker2::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     edm::Handle<bool> eeBadSCHandle;
     iEvent.getByToken(eeBadSC_, eeBadSCHandle);
     t.Flag_eeBadScFilter = *eeBadSCHandle.product();
+
+    edm::Handle<bool> badPFMuonHandle;
+    iEvent.getByToken(badPFMuon_, badPFMuonHandle);
+    t.Flag_badPFMuonFilter = *badPFMuonHandle.product();
+
+    edm::Handle<bool> badChargedCandidateHandle;
+    iEvent.getByToken(badChargedCandidate_, badChargedCandidateHandle);
+    t.Flag_badChargedCandidateFilter = *badChargedCandidateHandle.product();
+
+    edm::Handle<bool> globalTightHalo2016Handle;
+    iEvent.getByToken(globalTightHalo2016_, globalTightHalo2016Handle);
+    t.Flag_globalTightHalo2016Filter = *globalTightHalo2016Handle.product();
+
+    edm::Handle<bool> ecalBadCalibHandle;
+    iEvent.getByToken(ecalBadCalib_, ecalBadCalibHandle);
+    t.Flag_ecalBadCalibFilter = *ecalBadCalibHandle.product();
 
     // fill a vector of genps for convenience
     vector<const reco::GenParticle*> genps;
@@ -352,9 +376,9 @@ JRTbabymaker2::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     
 
     // filters for badly reconstructed things
-    t.Flag_badMuonFilterV2 = true;
-    t.Flag_badMuonFilterV2_loose = true;
-    t.Flag_badChargedCandidateFilterV2 = true;
+    t.Flag_badMuonFilter2016 = true;
+    t.Flag_badMuonFilter2016_loose = true;
+    t.Flag_badChargedCandidateFilter2016 = true;
     for(vector<reco::Muon>::const_iterator m = muons->begin(); m!= muons->end(); m++){
         reco::TrackRef tk = m->innerTrack();
         reco::TrackRef bt = m->muonBestTrack();
@@ -380,9 +404,9 @@ JRTbabymaker2::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
                         continue;
                     float dr = deltaR(p->eta(), p->phi(), m->eta(), m->phi());
                     if(dr < 0.001){  //fails filter!
-                        t.Flag_badMuonFilterV2_loose = false;
+                        t.Flag_badMuonFilter2016_loose = false;
                         if (tk_algo==14 && tk_algoOrig==14)    //suspicious algorithm
-                            t.Flag_badMuonFilterV2 = false;
+                            t.Flag_badMuonFilter2016 = false;
                     }
                 }
             }
@@ -405,7 +429,7 @@ JRTbabymaker2::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
                         continue;
 
                     //fails filter!
-                    t.Flag_badChargedCandidateFilterV2 = false;
+                    t.Flag_badChargedCandidateFilter2016 = false;
                 }
             }
         }
@@ -419,19 +443,19 @@ JRTbabymaker2::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
 // ------------ method called once each job just before starting event loop  ------------
 void 
-JRTbabymaker2::beginJob()
+JRTbabymaker::beginJob()
 {
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
 void 
-JRTbabymaker2::endJob() 
+JRTbabymaker::endJob() 
 {
 }
 
 // ------------ method fills 'descriptions' with the allowed parameters for the module  ------------
 void
-JRTbabymaker2::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
+JRTbabymaker::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   //The following says we do not know what parameters are allowed so do no validation
   // Please change this to state exactly what you do use, even if it is no parameters
   edm::ParameterSetDescription desc;
@@ -627,4 +651,4 @@ int getFlavourCMSSW(vector<const reco::GenParticle*> genps, float jet_pt, float 
 }
 
 //define this as a plug-in
-DEFINE_FWK_MODULE(JRTbabymaker2);
+DEFINE_FWK_MODULE(JRTbabymaker);

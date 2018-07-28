@@ -166,7 +166,7 @@ int main(int argc, char* argv[])
             // if(nEventsTotal%1==0)
                 cout << "Processed " << nEventsTotal << " / " << nEventsChain << " events\n";
 
-            if(!t.Flag_badMuonFilterV2 || !t.Flag_badChargedCandidateFilterV2)
+            if(!t.Flag_badMuonFilter2016 || !t.Flag_badChargedCandidateFilter2016)
                 continue;
             if(!t.Flag_ecalDeadCellTriggerPrimitiveFilter)
                 continue;
@@ -227,19 +227,19 @@ int main(int argc, char* argv[])
 
                 // if(abs(t.recojet_leadingPFCandId->at(irj)) == 13 && t.recojet_muFrac->at(irj) > 50 && t.genjet_muFrac->at(igj) == 0 && t.recojet_pt->at(irj)*0.01*t.recojet_muFrac->at(irj) > 100.0){
                 //         cout << "[JRTlooper] matched muonic rj/non-muonic gj: " << t.evt_run << ":" << t.evt_lumi << ":" << t.evt_event << " " << ratio << " " << t.recojet_leadingPFCandId->at(irj) << " " << 
-                //             t.Flag_badMuonFilterV2 << " " << t.Flag_badMuonFilterV2_loose << " " << t.Flag_badChargedCandidateFilterV2 << " " << 
+                //             t.Flag_badMuonFilter2016 << " " << t.Flag_badMuonFilter2016_loose << " " << t.Flag_badChargedCandidateFilter2016 << " " << 
                 //             (int)t.recojet_muFrac->at(irj) << " " << t.genjet_flavour_cmssw->at(igj) << " " << t.genjet_flavour_bennett->at(igj) << endl;
                 // }
 
                 // if(pt_bin>=6 && eta_bin<=3 && ratio >= 2.0){
                 //     cout << "[JRTlooper] high smear event: " << t.evt_run << ":" << t.evt_lumi << ":" << t.evt_event << " " << 
-                //         t.Flag_badMuonFilterV2 << " " << t.Flag_badMuonFilterV2_loose << " " << t.Flag_badChargedCandidateFilterV2 << " " << ratio << " " << 
+                //         t.Flag_badMuonFilter2016 << " " << t.Flag_badMuonFilter2016_loose << " " << t.Flag_badChargedCandidateFilter2016 << " " << ratio << " " << 
                 //         t.recojet_leadingPFCandId->at(irj) << " " << (int)t.recojet_muFrac->at(irj) << " " << (int)t.genjet_muFrac->at(igj) << endl;
                 // }
 
                 // if(pt_bin>=8 && eta_bin<=11 && ratio <= 0.5){
                 //     cout << "[JRTlooper]  low smear event: " << t.evt_run << ":" << t.evt_lumi << ":" << t.evt_event << " " << 
-                //         t.Flag_badMuonFilterV2 << " " << t.Flag_badMuonFilterV2_loose << " " << t.Flag_badChargedCandidateFilterV2 << " " << ratio << " " << 
+                //         t.Flag_badMuonFilter2016 << " " << t.Flag_badMuonFilter2016_loose << " " << t.Flag_badChargedCandidateFilter2016 << " " << ratio << " " << 
                 //         t.recojet_leadingPFCandId->at(irj) << " " << (int)t.recojet_muFrac->at(irj) << " " << (int)t.genjet_muFrac->at(igj) << 
                 //         " " << t.genjet_pt->at(igj) << " " << t.genjet_eta->at(igj) << " " << t.genjet_phi->at(igj) << endl;
                 // }
