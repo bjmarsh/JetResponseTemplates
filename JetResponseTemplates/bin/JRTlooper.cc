@@ -26,22 +26,39 @@ std::map<string,float> scale1fbs;
 
 int main(int argc, char* argv[]) 
 {
-    //94x_v4
-    scale1fbs["qcd_pt15to30"] = 93725.1903008;
-    scale1fbs["qcd_pt30to50"] = 7082.53323235;
-    scale1fbs["qcd_pt50to80"] = 996.933558355;
-    scale1fbs["qcd_pt80to120"] = 96.5446073005;
-    scale1fbs["qcd_pt120to170"] = 17.7596096037;
-    scale1fbs["qcd_pt170to300"] = 3.96138811936;
-    scale1fbs["qcd_pt300to470"] = 0.152583000237;
-    scale1fbs["qcd_pt470to600"] = 0.024749609703;
-    scale1fbs["qcd_pt600to800"] = 0.00446736336501;
-    scale1fbs["qcd_pt800to1000"] = 0.000865341241033;
-    scale1fbs["qcd_pt1000to1400"] = 0.000491061664129;
-    scale1fbs["qcd_pt1400to1800"] = 0.000148823873705;
-    scale1fbs["qcd_pt1800to2400"] = 3.93109847292e-05;
+    //94x_v5
+    scale1fbs["qcd_pt15to30"] = 91933.9666139;
+    scale1fbs["qcd_pt30to50"] = 7057.7848245;
+    scale1fbs["qcd_pt50to80"] = 114306.546751;
+    scale1fbs["qcd_pt80to120"] = 96.053414089;
+    scale1fbs["qcd_pt120to170"] = 17.5217342403;
+    scale1fbs["qcd_pt170to300"] = 3.92828728604;
+    scale1fbs["qcd_pt300to470"] = 0.145157136358;
+    scale1fbs["qcd_pt470to600"] = 0.0246390635666;
+    scale1fbs["qcd_pt600to800"] = 0.00329032154821;
+    scale1fbs["qcd_pt800to1000"] = 0.000855571217051;
+    scale1fbs["qcd_pt1000to1400"] = 0.00051184240495;
+    scale1fbs["qcd_pt1400to1800"] = 0.0001482163556;
+    scale1fbs["qcd_pt1800to2400"] = 3.9479423768e-05;
     scale1fbs["qcd_pt2400to3200"] = 3.57483227132e-06;
-    scale1fbs["qcd_pt3200toInf"] = 2.22306874724e-07;
+    scale1fbs["qcd_pt3200toInf"] = 2.18312117249e-07;
+
+    // //94x_v4
+    // scale1fbs["qcd_pt15to30"] = 93725.1903008;
+    // scale1fbs["qcd_pt30to50"] = 7082.53323235;
+    // scale1fbs["qcd_pt50to80"] = 996.933558355;
+    // scale1fbs["qcd_pt80to120"] = 96.5446073005;
+    // scale1fbs["qcd_pt120to170"] = 17.7596096037;
+    // scale1fbs["qcd_pt170to300"] = 3.96138811936;
+    // scale1fbs["qcd_pt300to470"] = 0.152583000237;
+    // scale1fbs["qcd_pt470to600"] = 0.024749609703;
+    // scale1fbs["qcd_pt600to800"] = 0.00446736336501;
+    // scale1fbs["qcd_pt800to1000"] = 0.000865341241033;
+    // scale1fbs["qcd_pt1000to1400"] = 0.000491061664129;
+    // scale1fbs["qcd_pt1400to1800"] = 0.000148823873705;
+    // scale1fbs["qcd_pt1800to2400"] = 3.93109847292e-05;
+    // scale1fbs["qcd_pt2400to3200"] = 3.57483227132e-06;
+    // scale1fbs["qcd_pt3200toInf"] = 2.22306874724e-07;
 
     // // 94x_v3
     // scale1fbs["qcd_pt15to30"] = 92359.4370056;
@@ -168,6 +185,8 @@ int main(int argc, char* argv[])
 
             if(!t.Flag_badMuonFilter2016 || !t.Flag_badChargedCandidateFilter2016)
                 continue;
+            if(!t.Flag_badPFMuonFilter || !t.Flag_badChargedCandidateFilter)
+                continue;
             if(!t.Flag_ecalDeadCellTriggerPrimitiveFilter)
                 continue;
             if(!t.Flag_hbheNoiseFilter)
@@ -175,6 +194,10 @@ int main(int argc, char* argv[])
             if(!t.Flag_hbheNoiseIsoFilter)
                 continue;
             if(!t.Flag_eeBadScFilter)
+                continue;
+            if(!t.Flag_ecalBadCalibFilter)
+                continue;
+            if(!t.Flag_globalTightHalo2016Filter)
                 continue;
 
             vector<pair<uint,uint> > matches;
