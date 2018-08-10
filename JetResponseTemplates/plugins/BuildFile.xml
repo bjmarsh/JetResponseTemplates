@@ -2,6 +2,7 @@
 <use   name="FWCore/PluginManager"/>
 <use   name="FWCore/ParameterSet"/>
 <use   name="DataFormats/TrackReco"/>
+<use   name="DataFormats/PatCandidates"/>
 <use   name="CommonTools/UtilAlgos"/>
 <use   name="FWCore/PythonParameterSet"/>
 <use   name="CommonTools/Utils"/>

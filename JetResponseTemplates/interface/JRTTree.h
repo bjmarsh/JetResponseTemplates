@@ -46,6 +46,9 @@ class JRTTree {
     vector<float>*    recojet_eta = 0;
     vector<float>*    recojet_phi = 0;
     vector<float>*    recojet_area = 0;
+    vector<float>*    recojet_puId_disc = 0;
+    vector<int>*      recojet_puId_ID = 0;
+    vector<float>*    recojet_btagCSV = 0;
     vector<bool>*     recojet_isLoosePFJet = 0;
     vector<bool>*     recojet_isTightPFJet = 0;
     vector<char>*     recojet_cemFrac = 0;
@@ -54,6 +57,9 @@ class JRTTree {
     vector<char>*     recojet_nhFrac = 0;
     vector<char>*     recojet_muFrac = 0;
     vector<char>*     recojet_elFrac = 0;
+    vector<int>*      recojet_chargedMult = 0;
+    vector<int>*      recojet_neutralMult = 0;
+    vector<int>*      recojet_npfcands = 0;
     vector<int>*      recojet_leadingPFCandId = 0;
     int               n_recojet;
     vector<int>*      genjet_flavour_bennett = 0;
@@ -101,6 +107,9 @@ class JRTTree {
     TBranch *b_recojet_eta = 0;
     TBranch *b_recojet_phi = 0;
     TBranch *b_recojet_area = 0;
+    TBranch *b_recojet_puId_disc = 0;
+    TBranch *b_recojet_puId_ID = 0;
+    TBranch *b_recojet_btagCSV = 0;
     TBranch *b_recojet_isLoosePFJet = 0;
     TBranch *b_recojet_isTightPFJet = 0;
     TBranch *b_recojet_cemFrac = 0;
@@ -109,6 +118,9 @@ class JRTTree {
     TBranch *b_recojet_nhFrac = 0;
     TBranch *b_recojet_muFrac = 0;
     TBranch *b_recojet_elFrac = 0;
+    TBranch *b_recojet_chargedMult = 0;
+    TBranch *b_recojet_neutralMult = 0;
+    TBranch *b_recojet_npfcands = 0;
     TBranch *b_recojet_leadingPFCandId = 0;
     TBranch *b_n_recojet = 0;
     TBranch *b_genjet_flavour_bennett = 0;

@@ -2,7 +2,7 @@
 # tar -hcf input.tar --exclude='.git' --exclude='*.root' --exclude='PhysicsTools' --exclude='batchsubmit' ../../../../../CMSSW_9_4_7
 # gzip ./input.tar
 
-TAG=94x_v5
+TAG=94x_v6
 
 while read LINE; do
     echo $LINE $TAG

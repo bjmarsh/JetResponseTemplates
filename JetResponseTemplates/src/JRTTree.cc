@@ -24,6 +24,9 @@ void JRTTree::Init(TTree *tree){
         this->recojet_eta = new vector<float>;
         this->recojet_phi = new vector<float>;
         this->recojet_area = new vector<float>;
+        this->recojet_puId_disc = new vector<float>;
+        this->recojet_puId_ID = new vector<int>;
+        this->recojet_btagCSV = new vector<float>;
         this->recojet_isLoosePFJet = new vector<bool>;
         this->recojet_isTightPFJet = new vector<bool>;
         this->recojet_cemFrac = new vector<char>;
@@ -32,6 +35,9 @@ void JRTTree::Init(TTree *tree){
         this->recojet_nhFrac = new vector<char>;
         this->recojet_muFrac = new vector<char>;
         this->recojet_elFrac = new vector<char>;
+        this->recojet_chargedMult = new vector<int>;
+        this->recojet_neutralMult = new vector<int>;
+        this->recojet_npfcands = new vector<int>;
         this->recojet_leadingPFCandId = new vector<int>;
         this->genjet_flavour_bennett = new vector<int>;
         this->genjet_flavour_cmssw = new vector<int>;
@@ -49,7 +55,7 @@ void JRTTree::Init(TTree *tree){
         b_Flag_badPFMuonFilter                    = this->tree->Branch("Flag_badPFMuonFilter", &Flag_badPFMuonFilter);
         b_Flag_badChargedCandidateFilter          = this->tree->Branch("Flag_badChargedCandidateFilter", &Flag_badChargedCandidateFilter);
         b_Flag_globalTightHalo2016Filter          = this->tree->Branch("Flag_globalTightHalo2016Filter", &Flag_globalTightHalo2016Filter);
-        b_Flag_ecalBadCalibFilter          = this->tree->Branch("Flag_ecalBadCalibFilter", &Flag_ecalBadCalibFilter);
+        b_Flag_ecalBadCalibFilter                 = this->tree->Branch("Flag_ecalBadCalibFilter", &Flag_ecalBadCalibFilter);
         b_evt_fixgridfastjet_all_rho  = this->tree->Branch("evt_fixgridfastjet_all_rho", &evt_fixgridfastjet_all_rho);
         b_evt_nvertices               = this->tree->Branch("evt_nvertices", &evt_nvertices);
         b_pfmet_pt                    = this->tree->Branch("pfmet_pt", &pfmet_pt);
@@ -68,6 +74,9 @@ void JRTTree::Init(TTree *tree){
         b_recojet_eta                 = this->tree->Branch("recojet_eta", recojet_eta);
         b_recojet_phi                 = this->tree->Branch("recojet_phi", recojet_phi);
         b_recojet_area                = this->tree->Branch("recojet_area", recojet_area);
+        b_recojet_puId_disc           = this->tree->Branch("recojet_puId_disc", recojet_puId_disc);
+        b_recojet_puId_ID             = this->tree->Branch("recojet_puId_ID", recojet_puId_ID);
+        b_recojet_btagCSV             = this->tree->Branch("recojet_btagCSV", recojet_btagCSV);
         b_recojet_isLoosePFJet        = this->tree->Branch("recojet_isLoosePFJet", recojet_isLoosePFJet);
         b_recojet_isTightPFJet        = this->tree->Branch("recojet_isTightPFJet", recojet_isTightPFJet);
         b_recojet_cemFrac             = this->tree->Branch("recojet_cemFrac", recojet_cemFrac);
@@ -76,6 +85,9 @@ void JRTTree::Init(TTree *tree){
         b_recojet_nhFrac              = this->tree->Branch("recojet_nhFrac", recojet_nhFrac);
         b_recojet_muFrac              = this->tree->Branch("recojet_muFrac", recojet_muFrac);
         b_recojet_elFrac              = this->tree->Branch("recojet_elFrac", recojet_elFrac);
+        b_recojet_chargedMult         = this->tree->Branch("recojet_chargedMult", recojet_chargedMult);
+        b_recojet_neutralMult         = this->tree->Branch("recojet_neutralMult", recojet_neutralMult);
+        b_recojet_npfcands            = this->tree->Branch("recojet_npfcands", recojet_npfcands);
         b_recojet_leadingPFCandId     = this->tree->Branch("recojet_leadingPFCandId", recojet_leadingPFCandId);
         b_n_recojet                   = this->tree->Branch("n_recojet", &n_recojet);
         b_genjet_flavour_bennett      = this->tree->Branch("genjet_flavour_bennett", genjet_flavour_bennett);
@@ -118,6 +130,9 @@ void JRTTree::Init(TTree *tree){
         this->tree->SetBranchAddress("recojet_eta", &recojet_eta, &b_recojet_eta);
         this->tree->SetBranchAddress("recojet_phi", &recojet_phi, &b_recojet_phi);
         this->tree->SetBranchAddress("recojet_area", &recojet_area, &b_recojet_area);
+        this->tree->SetBranchAddress("recojet_puId_disc", &recojet_puId_disc, &b_recojet_puId_disc);
+        this->tree->SetBranchAddress("recojet_puId_ID", &recojet_puId_ID, &b_recojet_puId_ID);
+        this->tree->SetBranchAddress("recojet_btagCSV", &recojet_btagCSV, &b_recojet_btagCSV);
         this->tree->SetBranchAddress("recojet_isLoosePFJet", &recojet_isLoosePFJet, &b_recojet_isLoosePFJet);
         this->tree->SetBranchAddress("recojet_isTightPFJet", &recojet_isTightPFJet, &b_recojet_isTightPFJet);
         this->tree->SetBranchAddress("recojet_cemFrac", &recojet_cemFrac, &b_recojet_cemFrac);
@@ -126,6 +141,9 @@ void JRTTree::Init(TTree *tree){
         this->tree->SetBranchAddress("recojet_nhFrac", &recojet_nhFrac, &b_recojet_nhFrac);
         this->tree->SetBranchAddress("recojet_muFrac", &recojet_muFrac, &b_recojet_muFrac);
         this->tree->SetBranchAddress("recojet_elFrac", &recojet_elFrac, &b_recojet_elFrac);
+        this->tree->SetBranchAddress("recojet_chargedMult", &recojet_chargedMult, &b_recojet_chargedMult);
+        this->tree->SetBranchAddress("recojet_neutralMult", &recojet_neutralMult, &b_recojet_neutralMult);
+        this->tree->SetBranchAddress("recojet_npfcands", &recojet_npfcands, &b_recojet_npfcands);
         this->tree->SetBranchAddress("recojet_leadingPFCandId", &recojet_leadingPFCandId, &b_recojet_leadingPFCandId);
         this->tree->SetBranchAddress("n_recojet", &n_recojet, &b_n_recojet);
         this->tree->SetBranchAddress("genjet_flavour_bennett", &genjet_flavour_bennett, &b_genjet_flavour_bennett);
@@ -170,6 +188,9 @@ void JRTTree::Reset(){
     recojet_eta->clear();
     recojet_phi->clear();
     recojet_area->clear();
+    recojet_puId_disc->clear();
+    recojet_puId_ID->clear();
+    recojet_btagCSV->clear();
     recojet_isLoosePFJet->clear();
     recojet_isTightPFJet->clear();
     recojet_cemFrac->clear();
@@ -178,6 +199,9 @@ void JRTTree::Reset(){
     recojet_nhFrac->clear();
     recojet_muFrac->clear();
     recojet_elFrac->clear();
+    recojet_chargedMult->clear();
+    recojet_neutralMult->clear();
+    recojet_npfcands->clear();
     recojet_leadingPFCandId->clear();
     n_recojet = 0;
     genjet_flavour_bennett->clear();

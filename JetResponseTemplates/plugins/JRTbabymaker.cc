@@ -34,6 +34,7 @@
 #include "DataFormats/TrackReco/interface/Track.h"
 #include "DataFormats/ParticleFlowCandidate/interface/PFCandidate.h"
 #include "DataFormats/Math/interface/deltaR.h"
+#include "DataFormats/PatCandidates/interface/Jet.h"
 
 #include "SimDataFormats/JetMatching/interface/JetFlavour.h"
 #include "SimDataFormats/JetMatching/interface/JetFlavourMatching.h"
@@ -71,7 +72,7 @@ class JRTbabymaker : public edm::one::EDAnalyzer<>  {
       virtual void endJob() override;
 
     const edm::EDGetTokenT<reco::GenJetCollection > gj_;
-    const edm::EDGetTokenT<reco::PFJetCollection > rj_;
+    const edm::EDGetTokenT<pat::JetCollection> patjets_;
     const edm::EDGetTokenT<reco::GenParticleCollection > gp_;
     const edm::EDGetTokenT<reco::PFCandidateCollection > pfc_;
     const edm::EDGetTokenT<reco::VertexCollection > vx_;
@@ -107,7 +108,7 @@ class JRTbabymaker : public edm::one::EDAnalyzer<>  {
 //
 JRTbabymaker::JRTbabymaker(const edm::ParameterSet& iConfig) : 
     gj_(consumes<reco::GenJetCollection>(iConfig.getParameter<edm::InputTag>("genjets"))),
-    rj_(consumes<reco::PFJetCollection>(iConfig.getParameter<edm::InputTag>("pfjets"))),
+    patjets_(consumes<pat::JetCollection>(iConfig.getParameter<edm::InputTag>("patjets"))),
     gp_(consumes<reco::GenParticleCollection>(iConfig.getParameter<edm::InputTag>("genparticles"))),
     pfc_(consumes<reco::PFCandidateCollection>(iConfig.getParameter<edm::InputTag>("pfcands"))),
     vx_(consumes<reco::VertexCollection>(iConfig.getParameter<edm::InputTag>("vertices"))),
@@ -156,8 +157,8 @@ JRTbabymaker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     edm::Handle<reco::GenJetCollection> genJets;
     iEvent.getByToken(gj_, genJets);
 
-    edm::Handle<reco::PFJetCollection> recoJets;
-    iEvent.getByToken(rj_, recoJets);
+    edm::Handle<pat::JetCollection> patJets;
+    iEvent.getByToken(patjets_, patJets);
 
     edm::Handle<reco::GenParticleCollection> genParticles;
     iEvent.getByToken(gp_, genParticles);
@@ -232,6 +233,7 @@ JRTbabymaker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
         float jet_eta = gj->eta();
         float jet_phi = gj->phi();
         float jet_pt  = gj->pt();
+
         if(jet_pt < 10) continue;
 
         // cout << "gen jet pt: " << jet_pt << ", eta: " << jet_eta << ", phi: " << jet_phi << endl;
@@ -280,22 +282,26 @@ JRTbabymaker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     double pfmet_x = pfmet_pt * cos(pfmet_phi);
     double pfmet_y = pfmet_pt * sin(pfmet_phi);
 
-    // loop recojet collection
-    for(reco::PFJetCollection::const_iterator rj=recoJets->begin(); rj!=recoJets->end(); ++rj){
+    // loop patjet collection
+    for(pat::JetCollection::const_iterator pj=patJets->begin(); pj!=patJets->end(); ++pj){
+        float undo_jec = pj->jecFactor("Uncorrected");
+        float pt = pj->pt() * undo_jec;
+        float phi = pj->phi();
+        float eta = pj->eta();
 
         JetCorrector->setRho(fixedGridRho);
-        JetCorrector->setJetPt(rj->pt());
-        JetCorrector->setJetEta(rj->eta());
-        JetCorrector->setJetA(rj->jetArea());
+        JetCorrector->setJetPt(pt);
+        JetCorrector->setJetEta(eta);
+        JetCorrector->setJetA(pj->jetArea());
 
         vector<float> corrs = JetCorrector->getSubCorrections();
         float correction = corrs.at(corrs.size()-1);
         // float corr_l1 = corrs.at(0);
                     
-        float pt = rj->pt();
-        float pt_cor = rj->pt() * correction;
-        float phi = rj->phi();
-        float eta = rj->eta();
+        float pt_cor = pt * correction;
+
+        if(pt_cor < 10)
+            continue;
 
         // add on the original pt and subtract back off the corrected to get corrected pfmet;
         pfmet_x += pt * cos(phi);
@@ -303,48 +309,61 @@ JRTbabymaker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
         pfmet_x -= pt_cor * cos(phi);
         pfmet_y -= pt_cor * sin(phi);
 
-        float energy = rj->p4().energy();
-        float chf = rj->chargedHadronEnergy()/energy;
-        float nhf = rj->neutralHadronEnergy()/energy;
-        float cef = rj->chargedEmEnergy()/energy;
-        float nef = rj->neutralEmEnergy()/energy;
-        float muf = rj->muonEnergy()/energy;
-        float elf = rj->electronEnergy()/energy;
-        float cm = rj->chargedMultiplicity();
-        float nm = rj->neutralMultiplicity();
+        float puId_disc = pj->userFloat("pileupJetIdUpdated:fullDiscriminant");
+        int puId_ID =  pj->userInt("pileupJetIdUpdated:fullId");
 
-        // do jet ID
+        float btag_CSV = pj->bDiscriminator("pfCombinedInclusiveSecondaryVertexV2BJetTags");
+
+        float energy = pj->p4().energy() * undo_jec;
+        float chf = pj->chargedHadronEnergy()/energy;
+        float nhf = pj->neutralHadronEnergy()/energy;
+        float cef = pj->chargedEmEnergy()/energy;
+        float nef = pj->neutralEmEnergy()/energy;
+        float muf = pj->muonEnergy()/energy;
+        float elf = pj->electronEnergy()/energy;
+        int cm = pj->chargedMultiplicity();
+        int nm = pj->neutralMultiplicity();
+        int npfcands = pj->getPFConstituents().size();
+
+        // do jet ID (updated for 2017: no loose WP)
         bool isLoosePFJet = true;
         bool isTightPFJet = true;
-        if(eta < 3.0){
-            if(nhf >= 0.99) isLoosePFJet = false;
-            if(nef >= 0.99) isLoosePFJet = false;
-            if(cm + nm < 2) isLoosePFJet = false;
+        if(fabs(eta) <= 2.4){
+            if(chf == 0.00) isTightPFJet = false;
+            if(cm == 0) isTightPFJet = false;
+        }
+        if(fabs(eta) <= 2.7){
             if(nef >= 0.9) isTightPFJet = false;
             if(nhf >= 0.9) isTightPFJet = false;
-            if(eta < 2.4){
-                if(!(cm > 0))  isLoosePFJet = false;
-                if(!(chf > 0)) isLoosePFJet = false;
-                if(!(cef < 0.99)) isLoosePFJet = false;
-            }
+            if(npfcands <= 1) isTightPFJet = false;
+        }else if(fabs(eta) <= 3.0){
+            if(nef <= 0.02 || nef >= 0.99) isTightPFJet = false;
+            if(nm <= 2) isTightPFJet = false;
         }else{
-            if(!(nef < 0.9)) isLoosePFJet = false;
-            if(!(nm > 10)) isLoosePFJet = false;
+            if(nhf <= 0.02) isTightPFJet = false;
+            if(nef >= 0.90) isTightPFJet = false;
+            if(nm <= 10) isTightPFJet = false;
         }
-        isTightPFJet = isTightPFJet && isLoosePFJet;
+        isLoosePFJet = isTightPFJet;
 
         int leadingPFCandId;
-        if(rj->getPFConstituents().size() > 0)
-            leadingPFCandId = rj->getPFConstituents().at(0).get()->pdgId();
+        if(npfcands > 0)
+            leadingPFCandId = pj->getPFConstituents().at(0).get()->pdgId();
         else
             leadingPFCandId = 0;
+
+        // cout << "    " << pt << "(" << pt_cor << ") " << eta << " " << phi << " " << chf << " " << nhf << " " << cef << " " << nef << " " << muf << " " << elf << " " << cm << " " << nm << " " << npfcands << " " << leadingPFCandId <<
+        //     " " << puId_ID << " " << puId_disc << " " << btag_CSV << endl;
 
         // fill the tree variables for later filling;
         t.recojet_pt->push_back(pt_cor);
         t.recojet_pt_uncor->push_back(pt);
         t.recojet_eta->push_back(eta);
         t.recojet_phi->push_back(phi);
-        t.recojet_area->push_back(rj->jetArea());
+        t.recojet_area->push_back(pj->jetArea());
+        t.recojet_puId_disc->push_back(puId_disc);
+        t.recojet_puId_ID->push_back(puId_ID);
+        t.recojet_btagCSV->push_back(btag_CSV);
         t.recojet_isLoosePFJet->push_back(isLoosePFJet);
         t.recojet_isTightPFJet->push_back(isTightPFJet);                    
         t.recojet_cemFrac->push_back((char)round(100*cef));
@@ -353,9 +372,12 @@ JRTbabymaker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
         t.recojet_nhFrac->push_back((char)round(100*nhf));
         t.recojet_muFrac->push_back((char)round(100*muf));
         t.recojet_elFrac->push_back((char)round(100*elf));
+        t.recojet_chargedMult->push_back(cm);
+        t.recojet_neutralMult->push_back(nm);
+        t.recojet_npfcands->push_back(npfcands);
         t.recojet_leadingPFCandId->push_back(leadingPFCandId);
 
-    } // recojet loop
+    } // pat jets
 
     //clean up
     delete ResJetPar;
