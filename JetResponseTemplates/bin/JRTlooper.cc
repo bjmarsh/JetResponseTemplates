@@ -5,6 +5,7 @@
 
 #include <TString.h>
 #include <TH1D.h>
+#include <TH2D.h>
 #include <TROOT.h>
 #include <TFile.h>
 #include <TChain.h>
@@ -16,32 +17,69 @@
 #include "DataFormats/Math/interface/deltaR.h"
 
 #include "JetResponseTemplates/JetResponseTemplates/interface/JRTTree.h"
+#include "JetResponseTemplates/JetResponseTemplates/interface/BTagCalibrationStandalone.h"
 
 using namespace std;
 
 int getBin(float val, float *bins, int n_bins);
 int getSampleID(const char* filename);
+bool inDeadEcalCell(float eta, float phi);
+bool passTightPFJetID_2017(float eta, char chf, char nhf, char cef, char nef, int cm, int nm, int npfcands);
+double getBtagEffFromHist(float pt, float eta, BTagEntry::JetFlavor flavor, TH2D* effs);
 
 std::map<string,float> scale1fbs;
 
+// manual veto windows for dead ecal cells
+const uint NDEADCELLS = 17;
+float dead_cell_boundaries[NDEADCELLS][4] = {
+    {-2.4,-1.6,-2.15,-1.3},
+    {-2.15,-2.6,-1.95,-2.35},
+    {-1.65,0.5,-1.5,0.7},
+    {-1.35,-2.75,-1.25,-2.6},
+    {-1.3,0.5,-1.2,0.6},
+    {-1.15,0.5,-1.05,0.6},
+    {-0.4,0.1,-0.2,0.3},
+    {-1.0,2.9,-0.85,3.1},
+    {0.85,2.8,1.0,2.9},
+    {0.25,-0.8,0.35,-0.7},
+    {0.6,-0.8,0.7,-0.7},
+    {0.95,-0.8,1.05,-0.7},
+    {1.35,-2.65,1.45,-2.5},
+    {1.65,0.7,1.85,0.95},
+    {1.65,-0.7,1.8,-0.5},
+    {1.5,-1.6,1.65,-1.4},
+    {1.7,-2.2,1.9,-1.95}
+};
+
+
 int main(int argc, char* argv[]) 
 {
-    //94x_v5
     scale1fbs["qcd_pt15to30"] = 91933.9666139;
-    scale1fbs["qcd_pt30to50"] = 7057.7848245;
-    scale1fbs["qcd_pt50to80"] = 114306.546751;
-    scale1fbs["qcd_pt80to120"] = 96.053414089;
-    scale1fbs["qcd_pt120to170"] = 17.5217342403;
+    scale1fbs["qcd_pt30to50"] = 7686.58297702;
+    scale1fbs["qcd_pt80to120"] = 159.646828642;
+    scale1fbs["qcd_pt120to170"] = 17.5303225088;
     scale1fbs["qcd_pt170to300"] = 3.92828728604;
-    scale1fbs["qcd_pt300to470"] = 0.145157136358;
-    scale1fbs["qcd_pt470to600"] = 0.0246390635666;
-    scale1fbs["qcd_pt600to800"] = 0.00329032154821;
-    scale1fbs["qcd_pt800to1000"] = 0.000855571217051;
-    scale1fbs["qcd_pt1000to1400"] = 0.00051184240495;
+    scale1fbs["qcd_pt300to470"] = 0.679746626465;
+    scale1fbs["qcd_pt1000to1400"] = 0.000845213629959;
     scale1fbs["qcd_pt1400to1800"] = 0.0001482163556;
-    scale1fbs["qcd_pt1800to2400"] = 3.9479423768e-05;
     scale1fbs["qcd_pt2400to3200"] = 3.57483227132e-06;
-    scale1fbs["qcd_pt3200toInf"] = 2.18312117249e-07;
+
+    // //94x_v5
+    // scale1fbs["qcd_pt15to30"] = 91933.9666139;
+    // scale1fbs["qcd_pt30to50"] = 7057.7848245;
+    // scale1fbs["qcd_pt50to80"] = 114306.546751;
+    // scale1fbs["qcd_pt80to120"] = 96.053414089;
+    // scale1fbs["qcd_pt120to170"] = 17.5217342403;
+    // scale1fbs["qcd_pt170to300"] = 3.92828728604;
+    // scale1fbs["qcd_pt300to470"] = 0.145157136358;
+    // scale1fbs["qcd_pt470to600"] = 0.0246390635666;
+    // scale1fbs["qcd_pt600to800"] = 0.00329032154821;
+    // scale1fbs["qcd_pt800to1000"] = 0.000855571217051;
+    // scale1fbs["qcd_pt1000to1400"] = 0.00051184240495;
+    // scale1fbs["qcd_pt1400to1800"] = 0.0001482163556;
+    // scale1fbs["qcd_pt1800to2400"] = 3.9479423768e-05;
+    // scale1fbs["qcd_pt2400to3200"] = 3.57483227132e-06;
+    // scale1fbs["qcd_pt3200toInf"] = 2.18312117249e-07;
 
     // //94x_v4
     // scale1fbs["qcd_pt15to30"] = 93725.1903008;
@@ -107,7 +145,7 @@ int main(int argc, char* argv[])
 
 
     // setup histograms
-    TH1D* h_pileup = new TH1D("h_pileup",";n vertices",40,0,40);
+    TH1D* h_pileup = new TH1D("h_pileup",";n vertices",100,0,100);
     TH1D* h_dr = new TH1D("h_dr",";dR(reco,gen)",100,0,0.5);
     
     vector< vector<TH1D*>* > *JRTs_b = new vector< vector<TH1D*>* >;
@@ -130,6 +168,20 @@ int main(int argc, char* argv[])
         }
     }
 
+
+    BTagCalibration* calib = new BTagCalibration("csvv2", "btagsf/CSVv2_94XSF_V2_B_F.csv");
+    BTagCalibrationReader* reader_btagsf = new BTagCalibrationReader(BTagEntry::OP_MEDIUM, "central",{"up","down"});
+    reader_btagsf->load(*calib, BTagEntry::JetFlavor::FLAV_B, "comb");
+    reader_btagsf->load(*calib, BTagEntry::JetFlavor::FLAV_C, "comb");
+    reader_btagsf->load(*calib, BTagEntry::JetFlavor::FLAV_UDSG, "incl");
+    TFile* f_btag_eff = new TFile("btagsf/btageff__ttbar_powheg_pythia8_25ns_Fall17.root");
+    TH2D* h_btag_eff_b = (TH2D*) f_btag_eff->Get("h2_BTaggingEff_csv_med_Eff_b")->Clone("h_btag_eff_b");
+    TH2D* h_btag_eff_c = (TH2D*) f_btag_eff->Get("h2_BTaggingEff_csv_med_Eff_c")->Clone("h_btag_eff_c");
+    TH2D* h_btag_eff_udsg = (TH2D*) f_btag_eff->Get("h2_BTaggingEff_csv_med_Eff_udsg")->Clone("h_btag_eff_udsg");
+    h_btag_eff_b->SetDirectory(0);
+    h_btag_eff_c->SetDirectory(0);
+    h_btag_eff_udsg->SetDirectory(0);
+    f_btag_eff->Close();
 
     TChain *chain = new TChain("Events");
 
@@ -167,7 +219,8 @@ int main(int argc, char* argv[])
         if(i2==-1)
             i2 = title.Index(".",i1);
         TString samp(title(i1,i2-i1));
-        scale = scale1fbs[samp.Data()];
+        // scale = scale1fbs[samp.Data()];
+        scale = 1.0;
         cout << "    " << scale << endl;
 
         unsigned int nEventsTree = tree->GetEntriesFast();
@@ -246,6 +299,24 @@ int main(int argc, char* argv[])
                     continue;
                 }
 
+                if(inDeadEcalCell(t.genjet_eta->at(igj), t.genjet_phi->at(igj)))
+                    continue;
+
+                // apply jet ID
+                // if(!isTightPFJet_2017(t.recojet_eta->at(irj), t.recojet_chFrac->at(irj), t.recojet_nhFrac->at(irj),
+                //                       t.recojet_cemFrac->at(irj), t.recojet_nemFrac->at(irj),
+                //                       t.recojet_chargedMult->at(irj), t.recojet_neutralMult->at(irj),
+                //                       t.recojet_npfcands->at(irj)))
+                //     continue;
+                if(!t.recojet_isTightPFJet->at(irj))
+                    continue;
+
+                // apply pileup jet ID
+                if(!(t.recojet_puId_ID->at(irj) & (1<<0))) //loose
+                // if(!(t.recojet_puId_ID->at(irj) & (1<<1))) //medium
+                // if(!(t.recojet_puId_ID->at(irj) & (1<<2))) //tight
+                    continue;
+
                 h_dr->Fill(deltaR(t.genjet_eta->at(igj), t.genjet_phi->at(igj), t.recojet_eta->at(irj), t.recojet_phi->at(irj)), scale);
 
                 // if(abs(t.recojet_leadingPFCandId->at(irj)) == 13 && t.recojet_muFrac->at(irj) > 50 && t.genjet_muFrac->at(igj) == 0 && t.recojet_pt->at(irj)*0.01*t.recojet_muFrac->at(irj) > 100.0){
@@ -260,20 +331,51 @@ int main(int argc, char* argv[])
                 //         t.recojet_leadingPFCandId->at(irj) << " " << (int)t.recojet_muFrac->at(irj) << " " << (int)t.genjet_muFrac->at(igj) << endl;
                 // }
 
-                // if(pt_bin>=8 && eta_bin<=11 && ratio <= 0.5){
-                //     cout << "[JRTlooper]  low smear event: " << t.evt_run << ":" << t.evt_lumi << ":" << t.evt_event << " " << 
-                //         t.Flag_badMuonFilter2016 << " " << t.Flag_badMuonFilter2016_loose << " " << t.Flag_badChargedCandidateFilter2016 << " " << ratio << " " << 
-                //         t.recojet_leadingPFCandId->at(irj) << " " << (int)t.recojet_muFrac->at(irj) << " " << (int)t.genjet_muFrac->at(igj) << 
-                //         " " << t.genjet_pt->at(igj) << " " << t.genjet_eta->at(igj) << " " << t.genjet_phi->at(igj) << endl;
-                // }
+                if(pt_bin>=8 && eta_bin<=11 && ratio <= 0.5){
+                    cout << "[JRTlooper]  low smear event: " << t.evt_run << ":" << t.evt_lumi << ":" << t.evt_event << " " << 
+                        t.Flag_badMuonFilter2016 << " " << t.Flag_badMuonFilter2016_loose << " " << t.Flag_badChargedCandidateFilter2016 << " " << ratio << " " << 
+                        t.recojet_leadingPFCandId->at(irj) << " " << (int)t.recojet_muFrac->at(irj) << " " << (int)t.genjet_muFrac->at(igj) << 
+                        " " << t.genjet_pt->at(igj) << " " << t.genjet_eta->at(igj) << " " << t.genjet_phi->at(igj) << endl;
+                }
 
+                // // use gen-level flavor
+                // if(t.genjet_flavour_cmssw->at(igj) == 5){
+                //     JRTs_b->at(pt_bin)->at(eta_bin)->Fill(ratio, scale);
+                // }else if(t.genjet_flavour_cmssw->at(igj) >= 1){
+                //     JRTs_l->at(pt_bin)->at(eta_bin)->Fill(ratio, scale);
+                // }                    
+                // if(t.genjet_flavour_cmssw->at(igj) > 0)
+                //     JRTs_a->at(pt_bin)->at(eta_bin)->Fill(ratio, scale);
+                
+                // // use reco b-tagging
+                // if(t.recojet_btagCSV->at(irj) > 0.8838)
+                //     JRTs_b->at(pt_bin)->at(eta_bin)->Fill(ratio, scale);
+                // else
+                //     JRTs_l->at(pt_bin)->at(eta_bin)->Fill(ratio, scale);
+                // JRTs_a->at(pt_bin)->at(eta_bin)->Fill(ratio, scale);
+
+                // use gen-flavor, but weight by efficiency corrected with btag SFs
+                TH2D* eff_hist;
+                BTagEntry::JetFlavor flavor;
                 if(t.genjet_flavour_cmssw->at(igj) == 5){
-                    JRTs_b->at(pt_bin)->at(eta_bin)->Fill(ratio, scale);
+                    eff_hist = h_btag_eff_b;
+                    flavor = BTagEntry::FLAV_B;
+                }else if(t.genjet_flavour_cmssw->at(igj) == 4){
+                    eff_hist = h_btag_eff_c;
+                    flavor = BTagEntry::FLAV_C;
                 }else if(t.genjet_flavour_cmssw->at(igj) >= 1){
-                    JRTs_l->at(pt_bin)->at(eta_bin)->Fill(ratio, scale);
-                }                    
-                if(t.genjet_flavour_cmssw->at(igj) > 0)
+                    eff_hist = h_btag_eff_udsg;
+                    flavor = BTagEntry::FLAV_UDSG;
+                }
+                if(t.genjet_flavour_cmssw->at(igj) >= 1){
+                    double eff = getBtagEffFromHist(t.recojet_pt->at(irj), t.recojet_eta->at(irj), flavor, eff_hist);
+                    float weight_cent = reader_btagsf->eval_auto_bounds("central", flavor, t.recojet_eta->at(irj), t.recojet_pt->at(irj));
+                    float btagprob_data = weight_cent * eff;
+                    JRTs_b->at(pt_bin)->at(eta_bin)->Fill(ratio, scale * btagprob_data);
+                    JRTs_l->at(pt_bin)->at(eta_bin)->Fill(ratio, scale * (1-btagprob_data));
                     JRTs_a->at(pt_bin)->at(eta_bin)->Fill(ratio, scale);
+                }
+
 
             }// match loop
 
@@ -351,4 +453,51 @@ int getSampleID(const char* filename){
     if(strstr(filename, "qcd_pt3200toInf") != NULL)  return 15;
 
     return -1;
+}
+
+bool inDeadEcalCell(float eta, float phi){
+
+    for(uint i=0; i<NDEADCELLS; i++){
+        if( eta > dead_cell_boundaries[i][0] &&
+            eta < dead_cell_boundaries[i][2] &&
+            phi > dead_cell_boundaries[i][1] &&
+            phi < dead_cell_boundaries[i][3] )
+
+            return true;
+    }
+    return false;
+
+}
+
+bool passTightPFJetID_2017(float eta, char chf, char nhf, char cef, char nef, int cm, int nm, int npfcands){
+    if(fabs(eta) <= 2.4){
+        if(chf == 0) return false;
+        if(cm == 0) return false;
+    }
+    if(fabs(eta) <= 2.7){
+        if(nef >= 90) return false;
+        if(nhf >= 90) return false;
+        if(npfcands <= 1) return false;
+    }else if(fabs(eta) <= 3.0){
+        if(nef <= 2 || nef >= 99) return false;
+        if(nm <= 2) return false;
+    }else{
+        if(nhf <= 2) return false;
+        if(nef >= 90) return false;
+        if(nm <= 10) return false;
+    }
+    
+    return true;
+}
+
+double getBtagEffFromHist(float pt, float eta, BTagEntry::JetFlavor flavor, TH2D* effs){
+    float pt_cutoff;
+    if(flavor == BTagEntry::FLAV_B)
+        pt_cutoff = std::max(20.,std::min(599.,double(pt)));
+    else
+        pt_cutoff = std::max(20.,std::min(399.,double(pt)));
+
+    int binx = effs->GetXaxis()->FindBin(pt_cutoff);
+    int biny = effs->GetYaxis()->FindBin(fabs(eta));
+    return effs->GetBinContent(binx, biny);
 }

@@ -16,7 +16,7 @@
 
 using namespace std;
 
-TH1D* FitMethod1(TH1D *h, TF1* core=NULL);
+TH1D* FitMethod1(TH1D *h, TF1* core=NULL, bool verbose=false);
 TH1D* FitMethod2(TH1D *h, int degree=1, int window=8);
 TH1D* FitMethod3(TH1D *h, TF1* core=NULL);
 TH1D* FitMethod4(TH1D *h, TF1* core=NULL);
@@ -122,10 +122,14 @@ int main(int argc, char* argv[])
 
                 TF1 *core = new TF1("fcore","[0]*exp(-0.5*(x-[1])/[2]*(x-[1])/[2])",0,3);
                 TH1D* h_fit;                
-
+                float coresigma = 999;
+                
                 ////// METHOD 1 (triple gaussian) ///////////////////////////////////
 
-                // h_fit = FitMethod1(h, core);
+                // bool verbose = false;
+                // if(ij==0 && ipt==8 && ieta==6)
+                //     verbose = true;
+                // h_fit = FitMethod1(h, core, verbose);
 
                 ////// METHOD 2 (smoothing) /////////////////////////////////////////
 
@@ -169,26 +173,65 @@ int main(int argc, char* argv[])
 
                 ////// METHOD 4 (bennett func) /////////////////////////////////
 
-                h_fit = FitMethod4(h, core);
+                // h_fit = FitMethod4(h, core);
 
                 //////////////////////////////////////////////////////////////////////
 
                 ////// METHOD 5 (straight template w/ core fit) /////////////////////////////////
 
-                // h_fit = StraightTemplate(h, core);
+                h_fit = StraightTemplate(h, core);
+                coresigma = 2.0;
 
                 //////////////////////////////////////////////////////////////////////
 
+                ////// METHOD 6 (bennett on left tail, straight template on right) /////////////////////////////////
+
+                // TH1D* h_fit2 = StraightTemplate(h, NULL);
+                // h_fit = FitMethod4(h, core);
+
+                // int lowidx = 101;
+                // if(ij==1) lowidx = 1;  // for b-jets, use straight templates everywhere.
+                // for(int i=lowidx; i<=300; i++){
+                //     h_fit->SetBinContent(i, h_fit2->GetBinContent(i));
+                //     h_fit->SetBinError(i, h_fit2->GetBinError(i));
+                // }
+
+                // delete h_fit2;
+                
+                //////////////////////////////////////////////////////////////////////
+
                 h_fit->SetName(fname);
-                h_fit->Write();
 
                 core->SetRange(0,3);
                 core->SetNpx(300);
 
                 TH1D* h_core = (TH1D*)core->GetHistogram()->Clone(fname+"_core");
+                float mean=h_core->GetMean(), rms=h_core->GetRMS();
+                for(int i=1; i<h_core->GetNbinsX()+1; i++){
+                    float sigma = fabs(h_core->GetBinCenter(i) - mean)/rms;
+                    if (coresigma-1 <= sigma  && sigma < coresigma)
+                        h_core->SetBinContent(i, (coresigma-sigma) * h_core->GetBinContent(i));
+                    if(coresigma <= sigma)                            
+                        h_core->SetBinContent(i, 0);
+                    h_fit->SetBinError(i, 0);
+                    h_core->SetBinError(i, 0);
+                }
+
                 TH1D* h_tail = (TH1D*)h_fit->Clone(fname+"_tail");
+                h_tail->SetLineWidth(2);
+                h_tail->SetLineColor(kGreen+2);
                 h_tail->Add(h_core, -1);
 
+                h_fit->Add(h_tail, -1);
+                for(int i=1; i<h_tail->GetNbinsX()+1; i++){
+                    float sigma = fabs(h_core->GetBinCenter(i) - mean)/rms;
+                    if (sigma < coresigma-1)
+                        h_tail->SetBinContent(i, 0);
+                    h_tail->SetBinError(i, 0);                        
+                }
+                h_fit->Add(h_tail);
+
+                h_fit->Write();
                 h_core->Write();
                 h_tail->Write();
                    
@@ -211,7 +254,7 @@ int main(int argc, char* argv[])
 
 
 // fit to a triple gaussian
-TH1D* FitMethod1(TH1D *h, TF1* core){
+TH1D* FitMethod1(TH1D *h, TF1* core, bool verbose){
     
     TString func = "[0]*exp(-0.5*((x-[1])/[2])*((x-[1])/[2])) + [3]*exp(-0.5*((x-[4])/[5])*((x-[4])/[5])) + [6]*exp(-0.5*((x-[7])/[8])*((x-[7])/[8]))";
     // TString func = "0.3989*([0]/[2]*exp(-0.5*((x-[1])/[2])*((x-[1])/[2])) + [3]/[5]*exp(-0.5*((x-[4])/[5])*((x-[4])/[5])) + (1-[0]-[3])/[7]*exp(-0.5*((x-[6])/[7])*((x-[6])/[7])))";
@@ -227,8 +270,20 @@ TH1D* FitMethod1(TH1D *h, TF1* core){
     float center = h->GetBinCenter(maxbin);
     float rms = h->GetRMS();
 
+
+    // fit to gaussian first
+    TF1 *fgaus = new TF1("fgaus", "gaus", center-1.0*rms, center+1.0*rms);
+    fgaus->SetParameters(max, center, rms);
+    fgaus->SetParLimits(0, 0.97*max, 1.03*max);
+    fgaus->SetParLimits(1, center-0.03, center+0.03);
+    h->Fit(fgaus, "QNRM", "goff");
+
+    max = fgaus->GetParameter(0);
+    center = fgaus->GetParameter(1);
+    rms = fgaus->GetParameter(2);
+
     // f->SetParameters(max, center, rms, max/3, center-rms, rms/2, max/3, center+rms, rms/2);
-    f->SetParameters(max, center, rms, max/3, center-0.2, 0.3, max/3, center+0.2, 0.3);
+    f->SetParameters(max, center, rms, max/3, center-rms, rms/2, max/3, center+rms, rms);
     // max = max*rms/0.3989;
     // f->SetParameters(max, center, rms, max/3, center+0.2, 0.3, center-0.2, 0.3);
 
@@ -236,12 +291,12 @@ TH1D* FitMethod1(TH1D *h, TF1* core){
     f->SetParLimits(1, center-0.02, center+0.02);
 
     f->SetParLimits(3,0,max/2);
-    f->SetParLimits(4,0,3);
-    f->SetParLimits(5,0.1,5);
+    f->SetParLimits(4,0.4,1-0.3*rms);
+    f->SetParLimits(5,0.1,min(2.0*rms,0.5));
 
     f->SetParLimits(6,0,max/2);
-    f->SetParLimits(7,0,3);
-    f->SetParLimits(8,0.1,5);
+    f->SetParLimits(7,1+0.5*rms,2);
+    f->SetParLimits(8,0.1,2.0*rms);
 
     // f->SetParLimits(6,0,3);
     // f->SetParLimits(7,0.1,5);
@@ -249,6 +304,13 @@ TH1D* FitMethod1(TH1D *h, TF1* core){
     h->Fit(f,"QNR","goff");
     f->SetNpx(300);
     TH1D* hfit = (TH1D*)f->GetHistogram()->Clone();
+
+    if(verbose){
+        cout << "-------------------------------------------------------------" << endl;
+        cout << max << " " << center << " " << rms << endl;
+        cout << f->GetParameter(0) << " " << f->GetParameter(1) << " " << f->GetParameter(2) << " " << f->GetParameter(3) << " " << f->GetParameter(4) << " " << 
+            f->GetParameter(5) << " " << f->GetParameter(6) << " " << f->GetParameter(7) << " " << f->GetParameter(8) << endl;
+    }
 
     if(core != NULL){
         core->SetParameter(0, f->GetParameter(0));
@@ -263,6 +325,7 @@ TH1D* FitMethod1(TH1D *h, TF1* core){
     // hfit->Fit(core, "QN", "goff", center-rms, center+rms);
 
     delete f;
+    delete fgaus;
     delete h2;
     
     return hfit;
@@ -470,33 +533,43 @@ TH1D* FitMethod4(TH1D *h, TF1* core){
 }
 
 TH1D* StraightTemplate(TH1D* h, TF1* core){
+
+    // remove spikes from low stats
+    TH1D *h2 = (TH1D*)h->Clone();
+    for(int i=2; i<=h2->GetNbinsX()-1; i++){
+        if(h->GetBinContent(i-1)<1e-5 && h->GetBinContent(i+1)<1e-5)
+            h2->SetBinContent(i,0);
+    }
+
     TH1D* hfit = new TH1D("hfit", "", 300,0,3);
-    hfit->SetBinContent(1, h->GetBinContent(1) / 2.0);
-    hfit->SetBinError(1, h->GetBinError(1) / 2.0);
-    hfit->SetBinContent(300, h->GetBinContent(150) / 2.0);
-    hfit->SetBinError(300, h->GetBinError(150) / 2.0);
+    hfit->SetBinContent(1, h2->GetBinContent(1) / 2.0);
+    hfit->SetBinError(1, h2->GetBinError(1) / 2.0);
+    hfit->SetBinContent(300, h2->GetBinContent(150) / 2.0);
+    hfit->SetBinError(300, h2->GetBinError(150) / 2.0);
     for(int i=2; i<300; i++){
         if(i%2==0){
-            hfit->SetBinContent(i, 3./4*h->GetBinContent(i/2) + 1./4*h->GetBinContent(i/2+1));
-            hfit->SetBinError(i, 3./4*h->GetBinError(i/2) + 1./4*h->GetBinError(i/2+1));
+            hfit->SetBinContent(i, 3./4*h2->GetBinContent(i/2) + 1./4*h2->GetBinContent(i/2+1));
+            hfit->SetBinError(i, 3./4*h2->GetBinError(i/2) + 1./4*h2->GetBinError(i/2+1));
         }else{
-            hfit->SetBinContent(i, 1./4*h->GetBinContent((i-1)/2) + 3./4*h->GetBinContent((i-1)/2+1));
-            hfit->SetBinError(i, 1./4*h->GetBinError((i-1)/2) + 3./4*h->GetBinError((i-1)/2+1));
+            hfit->SetBinContent(i, 1./4*h2->GetBinContent((i-1)/2) + 3./4*h2->GetBinContent((i-1)/2+1));
+            hfit->SetBinError(i, 1./4*h2->GetBinError((i-1)/2) + 3./4*h2->GetBinError((i-1)/2+1));
         }        
     }
 
     hfit->Scale(1.0 / hfit->Integral() / hfit->GetBinWidth(1));
 
-    float max = hfit->GetBinContent(hfit->GetMaximumBin());
-    float mean = hfit->GetBinCenter(hfit->GetMaximumBin());
-    float rms = hfit->GetRMS();
-    // if(rms > 0.1)
-    //     rms *= 0.5;
-    core->SetRange(mean-rms, mean+rms);
-    core->SetParameters(max, mean, min(rms,0.1f));
-    core->SetParLimits(0, max-0.003, max+0.003);
-    core->SetParLimits(1, mean-0.02, mean+0.02);
-    hfit->Fit(core, "QNR", "goff");
+    if(core != NULL){
+        float max = hfit->GetBinContent(hfit->GetMaximumBin());
+        float mean = hfit->GetBinCenter(hfit->GetMaximumBin());
+        float rms = hfit->GetRMS();
+        // if(rms > 0.1)
+        //     rms *= 0.5;
+        core->SetRange(mean-rms, mean+rms);
+        core->SetParameters(max, mean, min(rms,0.1f));
+        core->SetParLimits(0, max-0.003, max+0.003);
+        core->SetParLimits(1, mean-0.02, mean+0.02);
+        hfit->Fit(core, "QNR", "goff");
+    }
 
     return hfit;
 

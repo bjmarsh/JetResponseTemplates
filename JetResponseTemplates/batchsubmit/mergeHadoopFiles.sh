@@ -5,7 +5,7 @@ function run () {
     nohup nice -n 10 root -b -q mergeHadoopFiles.C\(\"${HADOOPDIR}/$1/\",\"${OUTPUTDIR}/$1.root\"\) >& ${LOGDIR}/log_merge_$1.txt &
 }
 
-TAG=94x_v5
+TAG=94x_v6
 
 HADOOPDIR=/hadoop/cms/store/user/${USER}/JRTbabies/${TAG}
 OUTPUTDIR=/nfs-7/userdata/bemarsh/JRTbabies/${TAG}

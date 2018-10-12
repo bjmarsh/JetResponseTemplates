@@ -20,7 +20,7 @@ process.source = cms.Source("PoolSource",
     # replace 'myfile.root' with the source file you want to use
     fileNames = cms.untracked.vstring(
         # 'file:../scratch/pickevents_split.root'
-        'root://cmsxrootd.fnal.gov//store/mc/RunIIFall17DRPremix/QCD_Pt_800to1000_TuneCP5_13TeV_pythia8/AODSIM/94X_mc2017_realistic_v10-v2/50000/C883DE3C-8BE2-E711-8BA6-008CFAE45464.root',
+        '/store/mc/RunIIFall17DRPremix/QCD_Pt_800to1000_TuneCP5_13TeV_pythia8/AODSIM/94X_mc2017_realistic_v10-v2/50000/C883DE3C-8BE2-E711-8BA6-008CFAE45464.root',
         # 'file:out_perm.root',
     )
 )
@@ -90,10 +90,10 @@ process.JRT = cms.EDAnalyzer('JRTbabymaker',
     outFile      = cms.string("out.root")
 )
 
-process.out = cms.OutputModule("PoolOutputModule",
-                               fileName = cms.untracked.string("fulledm.root"),
-                               outputCommands = cms.untracked.vstring("keep *"),
-)
+# process.out = cms.OutputModule("PoolOutputModule",
+#                                fileName = cms.untracked.string("fulledm.root"),
+#                                outputCommands = cms.untracked.vstring("keep *"),
+# )
 
 process.p = cms.Path(
     process.EcalDeadCellTriggerPrimitiveFilter * 
@@ -116,7 +116,7 @@ process.p = cms.Path(
     process.JRT
     )
 
-process.e = cms.EndPath(process.out)
+# process.e = cms.EndPath(process.out)
 
 # from FWCore.ParameterSet.Utilities import convertToUnscheduled
 # process=convertToUnscheduled(process)

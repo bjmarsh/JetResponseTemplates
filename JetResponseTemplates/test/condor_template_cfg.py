@@ -90,10 +90,10 @@ process.JRT = cms.EDAnalyzer('JRTbabymaker',
     outFile      = cms.string("out.root")
 )
 
-process.out = cms.OutputModule("PoolOutputModule",
-                               fileName = cms.untracked.string("fulledm.root"),
-                               outputCommands = cms.untracked.vstring("keep *"),
-)
+# process.out = cms.OutputModule("PoolOutputModule",
+#                                fileName = cms.untracked.string("fulledm.root"),
+#                                outputCommands = cms.untracked.vstring("keep *"),
+# )
 
 process.p = cms.Path(
     process.EcalDeadCellTriggerPrimitiveFilter * 
@@ -116,7 +116,7 @@ process.p = cms.Path(
     process.JRT
     )
 
-process.e = cms.EndPath(process.out)
+# process.e = cms.EndPath(process.out)
 
 # from FWCore.ParameterSet.Utilities import convertToUnscheduled
 # process=convertToUnscheduled(process)

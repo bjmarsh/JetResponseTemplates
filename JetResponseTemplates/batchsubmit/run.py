@@ -5,10 +5,10 @@ import socket
 import time
 import sys
 
-tag = "94x_v6"
+tag = "94x_HT_v6"
 
-submitJobs = False  # set to False if you've already submitted jobs and just want to monitor, or if you just want to check for missing files
-sweeprootExisting = True # set to False to skip sweeprooting on existing files. For if you just want to check for new cms4/resubmit
+submitJobs = True  # set to False if you've already submitted jobs and just want to monitor, or if you just want to check for missing files
+sweeprootExisting = False # set to False to skip sweeprooting on existing files. For if you just want to check for new cms4/resubmit
 removeLogs = False # remove all condor log files after successful completion
 
 def getCompletedFiles():
