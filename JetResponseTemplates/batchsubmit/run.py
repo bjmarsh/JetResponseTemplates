@@ -5,7 +5,7 @@ import socket
 import time
 import sys
 
-tag = "94x_HT_v6"
+tag = "94x_v7_newSamp_newJEC"
 
 submitJobs = True  # set to False if you've already submitted jobs and just want to monitor, or if you just want to check for missing files
 sweeprootExisting = False # set to False to skip sweeprooting on existing files. For if you just want to check for new cms4/resubmit
