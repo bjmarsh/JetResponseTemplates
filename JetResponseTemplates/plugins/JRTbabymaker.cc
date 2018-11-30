@@ -84,10 +84,10 @@ class JRTbabymaker : public edm::one::EDAnalyzer<>  {
     const edm::EDGetTokenT<bool> hbheNoise_;
     const edm::EDGetTokenT<bool> hbheNoiseIso_;
     const edm::EDGetTokenT<bool> eeBadSC_;
-    const edm::EDGetTokenT<bool> badPFMuon_;
-    const edm::EDGetTokenT<bool> badChargedCandidate_;
+    // const edm::EDGetTokenT<bool> badPFMuon_;
+    // const edm::EDGetTokenT<bool> badChargedCandidate_;
     const edm::EDGetTokenT<bool> globalTightHalo2016_;
-    const edm::EDGetTokenT<bool> ecalBadCalib_;
+    // const edm::EDGetTokenT<bool> ecalBadCalib_;
 
     JRTTree t;
     TFile *fout;
@@ -120,10 +120,10 @@ JRTbabymaker::JRTbabymaker(const edm::ParameterSet& iConfig) :
     hbheNoise_(consumes<bool>(iConfig.getParameter<edm::InputTag>("hbheNoise"))),
     hbheNoiseIso_(consumes<bool>(iConfig.getParameter<edm::InputTag>("hbheNoiseIso"))),
     eeBadSC_(consumes<bool>(iConfig.getParameter<edm::InputTag>("eeBadSC"))),
-    badPFMuon_(consumes<bool>(iConfig.getParameter<edm::InputTag>("badPFMuon"))),
-    badChargedCandidate_(consumes<bool>(iConfig.getParameter<edm::InputTag>("badChargedCandidate"))),
-    globalTightHalo2016_(consumes<bool>(iConfig.getParameter<edm::InputTag>("globalTightHalo2016"))),
-    ecalBadCalib_(consumes<bool>(iConfig.getParameter<edm::InputTag>("ecalBadCalib")))
+    // badPFMuon_(consumes<bool>(iConfig.getParameter<edm::InputTag>("badPFMuon"))),
+    // badChargedCandidate_(consumes<bool>(iConfig.getParameter<edm::InputTag>("badChargedCandidate"))),
+    // ecalBadCalib_(consumes<bool>(iConfig.getParameter<edm::InputTag>("ecalBadCalib"))),
+    globalTightHalo2016_(consumes<bool>(iConfig.getParameter<edm::InputTag>("globalTightHalo2016")))
 {
 
     fout = new TFile(iConfig.getParameter<string>("outFile").c_str(), "RECREATE");
@@ -206,21 +206,21 @@ JRTbabymaker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     iEvent.getByToken(eeBadSC_, eeBadSCHandle);
     t.Flag_eeBadScFilter = *eeBadSCHandle.product();
 
-    edm::Handle<bool> badPFMuonHandle;
-    iEvent.getByToken(badPFMuon_, badPFMuonHandle);
-    t.Flag_badPFMuonFilter = *badPFMuonHandle.product();
+    // edm::Handle<bool> badPFMuonHandle;
+    // iEvent.getByToken(badPFMuon_, badPFMuonHandle);
+    t.Flag_badPFMuonFilter = true;
 
-    edm::Handle<bool> badChargedCandidateHandle;
-    iEvent.getByToken(badChargedCandidate_, badChargedCandidateHandle);
-    t.Flag_badChargedCandidateFilter = *badChargedCandidateHandle.product();
+    // edm::Handle<bool> badChargedCandidateHandle;
+    // iEvent.getByToken(badChargedCandidate_, badChargedCandidateHandle);
+    t.Flag_badChargedCandidateFilter = true;
 
     edm::Handle<bool> globalTightHalo2016Handle;
     iEvent.getByToken(globalTightHalo2016_, globalTightHalo2016Handle);
     t.Flag_globalTightHalo2016Filter = *globalTightHalo2016Handle.product();
 
-    edm::Handle<bool> ecalBadCalibHandle;
-    iEvent.getByToken(ecalBadCalib_, ecalBadCalibHandle);
-    t.Flag_ecalBadCalibFilter = *ecalBadCalibHandle.product();
+    // edm::Handle<bool> ecalBadCalibHandle;
+    // iEvent.getByToken(ecalBadCalib_, ecalBadCalibHandle);
+    t.Flag_ecalBadCalibFilter = true;
 
     // fill a vector of genps for convenience
     vector<const reco::GenParticle*> genps;
@@ -266,10 +266,10 @@ JRTbabymaker::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
     // set up JECs
     string jecDir = string(getenv("CMSSW_BASE")) + "/src/JetResponseTemplates/JetResponseTemplates/jecs/";                    
-    JetCorrectorParameters *ResJetPar = new JetCorrectorParameters(jecDir+"Fall17_17Nov2017_V32_MC_L2L3Residual_AK4PFchs.txt"); 
-    JetCorrectorParameters *L3JetPar  = new JetCorrectorParameters(jecDir+"Fall17_17Nov2017_V32_MC_L3Absolute_AK4PFchs.txt");
-    JetCorrectorParameters *L2JetPar  = new JetCorrectorParameters(jecDir+"Fall17_17Nov2017_V32_MC_L2Relative_AK4PFchs.txt");
-    JetCorrectorParameters *L1JetPar  = new JetCorrectorParameters(jecDir+"Fall17_17Nov2017_V32_MC_L1FastJet_AK4PFchs.txt");
+    JetCorrectorParameters *ResJetPar = new JetCorrectorParameters(jecDir+"Summer16_23Sep2016V4_MC_L2L3Residual_AK4PFchs.txt"); 
+    JetCorrectorParameters *L3JetPar  = new JetCorrectorParameters(jecDir+"Summer16_23Sep2016V4_MC_L3Absolute_AK4PFchs.txt");
+    JetCorrectorParameters *L2JetPar  = new JetCorrectorParameters(jecDir+"Summer16_23Sep2016V4_MC_L2Relative_AK4PFchs.txt");
+    JetCorrectorParameters *L1JetPar  = new JetCorrectorParameters(jecDir+"Summer16_23Sep2016V4_MC_L1FastJet_AK4PFchs.txt");
     vector<JetCorrectorParameters> vPar;
     vPar.push_back(*L1JetPar);
     vPar.push_back(*L2JetPar);

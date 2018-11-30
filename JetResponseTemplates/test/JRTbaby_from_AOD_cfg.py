@@ -12,7 +12,7 @@ process.load("Configuration.StandardSequences.MagneticField_cff")
 process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_condDBv2_cff")
 process.load("Configuration.StandardSequences.GeometryRecoDB_cff")
 from Configuration.AlCa.GlobalTag import GlobalTag
-process.GlobalTag = GlobalTag(process.GlobalTag, '94X_mc2017_realistic_v10', '')
+process.GlobalTag = GlobalTag(process.GlobalTag, '80X_mcRun2_asymptotic_2016_TrancheIV_v6', '')
 
 process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(100) )
 
@@ -20,27 +20,22 @@ process.source = cms.Source("PoolSource",
     # replace 'myfile.root' with the source file you want to use
     fileNames = cms.untracked.vstring(
         # 'file:../scratch/pickevents_split.root'
-        '/store/mc/RunIIFall17DRPremix/QCD_Pt_800to1000_TuneCP5_13TeV_pythia8/AODSIM/94X_mc2017_realistic_v10-v2/50000/C883DE3C-8BE2-E711-8BA6-008CFAE45464.root',
+        # '/store/mc/RunIIFall17DRPremix/QCD_Pt_800to1000_TuneCP5_13TeV_pythia8/AODSIM/94X_mc2017_realistic_v10-v2/50000/C883DE3C-8BE2-E711-8BA6-008CFAE45464.root',
+        '/store/mc/RunIISummer16DR80Premix/QCD_Pt_1000to1400_TuneCUETP8M1_13TeV_pythia8/AODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/60000/B8D35964-D0AC-E611-BF27-002590A4C6BE.root',
         # 'file:out_perm.root',
     )
 )
 
 # add the met filters
-from RecoMET.METFilters.metFilters_cff import EcalDeadCellTriggerPrimitiveFilter, primaryVertexFilter, eeBadScFilter, HBHENoiseFilterResultProducer, BadPFMuonFilter, BadChargedCandidateFilter, globalTightHalo2016Filter, ecalBadCalibFilter
+from RecoMET.METFilters.metFilters_cff import EcalDeadCellTriggerPrimitiveFilter, primaryVertexFilter, eeBadScFilter, HBHENoiseFilterResultProducer, globalTightHalo2016Filter
 process.EcalDeadCellTriggerPrimitiveFilter = EcalDeadCellTriggerPrimitiveFilter.clone()
 process.EcalDeadCellTriggerPrimitiveFilter.taggingMode = cms.bool(True)
 process.eeBadScFilter = eeBadScFilter.clone()
 process.eeBadScFilter.taggingMode = cms.bool(True)
 process.primaryVertexFilter = primaryVertexFilter.clone()
 process.HBHENoiseFilterResultProducer = HBHENoiseFilterResultProducer.clone()
-process.BadPFMuonFilter = BadPFMuonFilter.clone()
-process.BadPFMuonFilter.taggingMode = cms.bool(True)
-process.BadChargedCandidateFilter = BadChargedCandidateFilter.clone()
-process.BadChargedCandidateFilter.taggingMode = cms.bool(True)
 process.globalTightHalo2016Filter = globalTightHalo2016Filter.clone()
 process.globalTightHalo2016Filter.taggingMode = cms.bool(True)
-process.ecalBadCalibFilter = ecalBadCalibFilter.clone()
-process.ecalBadCalibFilter.taggingMode = cms.bool(True)
 
 # for the production of pat jets
 process.load("PhysicsTools.PatAlgos.recoLayer0.bTagging_cff")
@@ -82,9 +77,6 @@ process.JRT = cms.EDAnalyzer('JRTbabymaker',
     hbheNoise    = cms.InputTag("HBHENoiseFilterResultProducer", "HBHENoiseFilterResult"),
     hbheNoiseIso = cms.InputTag("HBHENoiseFilterResultProducer", "HBHEIsoNoiseFilterResult"),
     eeBadSC      = cms.InputTag("eeBadScFilter"),
-    badPFMuon    = cms.InputTag("BadPFMuonFilter"),
-    ecalBadCalib = cms.InputTag("ecalBadCalibFilter"),
-    badChargedCandidate = cms.InputTag("BadChargedCandidateFilter"),
     globalTightHalo2016 = cms.InputTag("globalTightHalo2016Filter"),
 
     outFile      = cms.string("out.root")
@@ -100,10 +92,7 @@ process.p = cms.Path(
     process.eeBadScFilter * 
     # process.primaryVertexFilter * 
     process.HBHENoiseFilterResultProducer * 
-    process.BadPFMuonFilter * 
-    process.BadChargedCandidateFilter * 
     process.globalTightHalo2016Filter * 
-    process.ecalBadCalibFilter * 
     process.patJetCorrections *
     process.patJetCharge *
     process.patJetPartonMatch *
