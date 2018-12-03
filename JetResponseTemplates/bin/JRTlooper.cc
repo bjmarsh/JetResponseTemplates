@@ -72,7 +72,7 @@ int main(int argc, char* argv[])
     scale1fbs["qcd_pt2400to3200"] = 4.08120692354e-06;
     scale1fbs["qcd_pt3200toInf"] = 2.44009816733e-07;
 
-    // // 94x_v6
+    // //94x_v6
     // scale1fbs["qcd_pt15to30"] = 91933.9666139;
     // scale1fbs["qcd_pt30to50"] = 7686.58297702;
     // scale1fbs["qcd_pt80to120"] = 159.646828642;
