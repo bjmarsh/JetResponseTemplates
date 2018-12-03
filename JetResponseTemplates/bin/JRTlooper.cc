@@ -54,83 +54,20 @@ float dead_cell_boundaries[NDEADCELLS][4] = {
 
 int main(int argc, char* argv[]) 
 {
-    scale1fbs["qcd_pt15to30"] = 91933.9666139;
-    scale1fbs["qcd_pt30to50"] = 7686.58297702;
-    scale1fbs["qcd_pt80to120"] = 159.646828642;
-    scale1fbs["qcd_pt120to170"] = 17.5303225088;
-    scale1fbs["qcd_pt170to300"] = 3.92828728604;
-    scale1fbs["qcd_pt300to470"] = 0.679746626465;
-    scale1fbs["qcd_pt1000to1400"] = 0.000845213629959;
-    scale1fbs["qcd_pt1400to1800"] = 0.0001482163556;
-    scale1fbs["qcd_pt2400to3200"] = 3.57483227132e-06;
-
-    // //94x_v5
-    // scale1fbs["qcd_pt15to30"] = 91933.9666139;
-    // scale1fbs["qcd_pt30to50"] = 7057.7848245;
-    // scale1fbs["qcd_pt50to80"] = 114306.546751;
-    // scale1fbs["qcd_pt80to120"] = 96.053414089;
-    // scale1fbs["qcd_pt120to170"] = 17.5217342403;
-    // scale1fbs["qcd_pt170to300"] = 3.92828728604;
-    // scale1fbs["qcd_pt300to470"] = 0.145157136358;
-    // scale1fbs["qcd_pt470to600"] = 0.0246390635666;
-    // scale1fbs["qcd_pt600to800"] = 0.00329032154821;
-    // scale1fbs["qcd_pt800to1000"] = 0.000855571217051;
-    // scale1fbs["qcd_pt1000to1400"] = 0.00051184240495;
-    // scale1fbs["qcd_pt1400to1800"] = 0.0001482163556;
-    // scale1fbs["qcd_pt1800to2400"] = 3.9479423768e-05;
-    // scale1fbs["qcd_pt2400to3200"] = 3.57483227132e-06;
-    // scale1fbs["qcd_pt3200toInf"] = 2.18312117249e-07;
-
-    // //94x_v4
-    // scale1fbs["qcd_pt15to30"] = 93725.1903008;
-    // scale1fbs["qcd_pt30to50"] = 7082.53323235;
-    // scale1fbs["qcd_pt50to80"] = 996.933558355;
-    // scale1fbs["qcd_pt80to120"] = 96.5446073005;
-    // scale1fbs["qcd_pt120to170"] = 17.7596096037;
-    // scale1fbs["qcd_pt170to300"] = 3.96138811936;
-    // scale1fbs["qcd_pt300to470"] = 0.152583000237;
-    // scale1fbs["qcd_pt470to600"] = 0.024749609703;
-    // scale1fbs["qcd_pt600to800"] = 0.00446736336501;
-    // scale1fbs["qcd_pt800to1000"] = 0.000865341241033;
-    // scale1fbs["qcd_pt1000to1400"] = 0.000491061664129;
-    // scale1fbs["qcd_pt1400to1800"] = 0.000148823873705;
-    // scale1fbs["qcd_pt1800to2400"] = 3.93109847292e-05;
-    // scale1fbs["qcd_pt2400to3200"] = 3.57483227132e-06;
-    // scale1fbs["qcd_pt3200toInf"] = 2.22306874724e-07;
-
-    // // 94x_v3
-    // scale1fbs["qcd_pt15to30"] = 92359.4370056;
-    // scale1fbs["qcd_pt30to50"] = 7062.65518089;
-    // scale1fbs["qcd_pt50to80"] = 998.93055138;
-    // scale1fbs["qcd_pt80to120"] = 95.9371434303;
-    // scale1fbs["qcd_pt120to170"] = 17.5217342403;
-    // scale1fbs["qcd_pt170to300"] = 3.93335209297;
-    // scale1fbs["qcd_pt300to470"] = 0.167573386562;
-    // scale1fbs["qcd_pt470to600"] = 0.0245364198903;
-    // scale1fbs["qcd_pt600to800"] = 0.00575903530705;
-    // scale1fbs["qcd_pt800to1000"] = 0.000448080395999;
-    // scale1fbs["qcd_pt1000to1400"] = 0.000479746802817;
-    // scale1fbs["qcd_pt1400to1800"] = 0.0001482163556;
-    // scale1fbs["qcd_pt1800to2400"] = 3.93109847292e-05;
-    // scale1fbs["qcd_pt2400to3200"] = 3.57483227132e-06;
-    // scale1fbs["qcd_pt3200toInf"] = 2.18312117249e-07;
-
-    // // 94x_v1
-    // scale1fbs["qcd_pt15to30"] = 93852.4286623;
-    // scale1fbs["qcd_pt30to50"] = 7415.76025329;
-    // scale1fbs["qcd_pt50to80"] = 1018.98771487;
-    // scale1fbs["qcd_pt80to120"] = 98.0586131763;
-    // scale1fbs["qcd_pt120to170"] = 18.2311320554;
-    // scale1fbs["qcd_pt170to300"] = 4.03694925931;
-    // scale1fbs["qcd_pt300to470"] = 0.151891935111;
-    // scale1fbs["qcd_pt470to600"] = 0.0253071903264;
-    // scale1fbs["qcd_pt600to800"] = 0.00294326852284;
-    // scale1fbs["qcd_pt800to1000"] = 0.000883412622441;
-    // scale1fbs["qcd_pt1000to1400"] = 0.000485938016757;
-    // scale1fbs["qcd_pt1400to1800"] = 0.0001482163556;
-    // scale1fbs["qcd_pt1800to2400"] = 3.94495195583e-05;
-    // scale1fbs["qcd_pt2400to3200"] = 3.57483227132e-06;
-    // scale1fbs["qcd_pt3200toInf"] = 2.18312117249e-07;
+    //80x_v1
+    scale1fbs["qcd_pt15to30"] = 165146.970476;
+    scale1fbs["qcd_pt30to50"] = 14121.3721374;
+    scale1fbs["qcd_pt50to80"] = 1952.64830653;
+    scale1fbs["qcd_pt80to120"] = 395.396136109;
+    scale1fbs["qcd_pt170to300"] = 16.853128483;
+    scale1fbs["qcd_pt300to470"] = 0.348160902229;
+    scale1fbs["qcd_pt470to600"] = 0.16368744738;
+    scale1fbs["qcd_pt600to800"] = 0.0479672067533;
+    scale1fbs["qcd_pt1000to1400"] = 0.00314040790659;
+    scale1fbs["qcd_pt1400to1800"] = 0.00212570854849;
+    scale1fbs["qcd_pt1800to2400"] = 5.79923291077e-05;
+    scale1fbs["qcd_pt2400to3200"] = 1.71076282607e-05;
+    scale1fbs["qcd_pt3200toInf"] = 4.22339081267e-07;
 
     if(argc<3){
         cout << "USAGE: JRTlooper <tag> <files to run over>" << endl;
@@ -169,12 +106,12 @@ int main(int argc, char* argv[])
     }
 
 
-    BTagCalibration* calib = new BTagCalibration("csvv2", "btagsf/CSVv2_94XSF_V2_B_F.csv");
+    BTagCalibration* calib = new BTagCalibration("csvv2", "btagsf/CSVv2_Moriond17_B_H.csv");
     BTagCalibrationReader* reader_btagsf = new BTagCalibrationReader(BTagEntry::OP_MEDIUM, "central",{"up","down"});
     reader_btagsf->load(*calib, BTagEntry::JetFlavor::FLAV_B, "comb");
     reader_btagsf->load(*calib, BTagEntry::JetFlavor::FLAV_C, "comb");
     reader_btagsf->load(*calib, BTagEntry::JetFlavor::FLAV_UDSG, "incl");
-    TFile* f_btag_eff = new TFile("btagsf/btageff__ttbar_powheg_pythia8_25ns_Fall17.root");
+    TFile* f_btag_eff = new TFile("btagsf/btageff__ttbar_powheg_pythia8_25ns_Moriond17.root");
     TH2D* h_btag_eff_b = (TH2D*) f_btag_eff->Get("h2_BTaggingEff_csv_med_Eff_b")->Clone("h_btag_eff_b");
     TH2D* h_btag_eff_c = (TH2D*) f_btag_eff->Get("h2_BTaggingEff_csv_med_Eff_c")->Clone("h_btag_eff_c");
     TH2D* h_btag_eff_udsg = (TH2D*) f_btag_eff->Get("h2_BTaggingEff_csv_med_Eff_udsg")->Clone("h_btag_eff_udsg");
@@ -248,8 +185,8 @@ int main(int argc, char* argv[])
                 continue;
             if(!t.Flag_eeBadScFilter)
                 continue;
-            if(!t.Flag_ecalBadCalibFilter)
-                continue;
+            // if(!t.Flag_ecalBadCalibFilter)
+            //     continue;
             if(!t.Flag_globalTightHalo2016Filter)
                 continue;
 
@@ -299,8 +236,8 @@ int main(int argc, char* argv[])
                     continue;
                 }
 
-                if(inDeadEcalCell(t.genjet_eta->at(igj), t.genjet_phi->at(igj)))
-                    continue;
+                // if(inDeadEcalCell(t.genjet_eta->at(igj), t.genjet_phi->at(igj)))
+                //     continue;
 
                 // apply jet ID
                 // if(!isTightPFJet_2017(t.recojet_eta->at(irj), t.recojet_chFrac->at(irj), t.recojet_nhFrac->at(irj),

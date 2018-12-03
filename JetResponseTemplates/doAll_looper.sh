@@ -1,7 +1,7 @@
 #! /bin/bash
 
-INDIR=/nfs-7/userdata/bemarsh/JRTbabies/94x_v6/
-HADOOP=/hadoop/cms/store/user/bemarsh/JRTbabies/94x_v6
+INDIR=/nfs-7/userdata/bemarsh/JRTbabies/80x_v1/
+HADOOP=/hadoop/cms/store/user/bemarsh/JRTbabies/80x_v1
 
 mkdir -p logs
 
@@ -14,6 +14,9 @@ mkdir -p logs
 
 for SAMP in `ls ${HADOOP}`; do
     bn=`basename ${SAMP}`
+    if [[ $bn == *"ext"* ]]; then
+        continue
+    fi
     echo JRTlooper $bn ${INDIR}/${bn}*
     nohup nice -n 10 JRTlooper $bn ${INDIR}/${bn}* &> logs/log_${bn}.txt &
 done
