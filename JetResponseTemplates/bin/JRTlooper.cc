@@ -54,15 +54,34 @@ float dead_cell_boundaries[NDEADCELLS][4] = {
 
 int main(int argc, char* argv[]) 
 {
-    scale1fbs["qcd_pt15to30"] = 91933.9666139;
-    scale1fbs["qcd_pt30to50"] = 7686.58297702;
-    scale1fbs["qcd_pt80to120"] = 159.646828642;
-    scale1fbs["qcd_pt120to170"] = 17.5303225088;
-    scale1fbs["qcd_pt170to300"] = 3.92828728604;
-    scale1fbs["qcd_pt300to470"] = 0.679746626465;
-    scale1fbs["qcd_pt1000to1400"] = 0.000845213629959;
-    scale1fbs["qcd_pt1400to1800"] = 0.0001482163556;
-    scale1fbs["qcd_pt2400to3200"] = 3.57483227132e-06;
+
+    //94x_v7
+    scale1fbs["qcd_pt15to30"] = 128064.471545;
+    scale1fbs["qcd_pt30to50"] = 6507.24684523;
+    scale1fbs["qcd_pt50to80"] = 646.963449494;
+    scale1fbs["qcd_pt80to120"] = 98.7252519477;
+    scale1fbs["qcd_pt120to170"] = 15.7939188283;
+    scale1fbs["qcd_pt170to300"] = 3.98165497185;
+    scale1fbs["qcd_pt300to470"] = 0.139888005195;
+    scale1fbs["qcd_pt470to600"] = 0.0232284124839;
+    scale1fbs["qcd_pt600to800"] = 0.0445715373174;
+    scale1fbs["qcd_pt800to1000"] = 0.000437625623577;
+    scale1fbs["qcd_pt1000to1400"] = 0.000582347121746;
+    scale1fbs["qcd_pt1400to1800"] = 0.0589843203136;
+    scale1fbs["qcd_pt1800to2400"] = 4.23969161051e-05;
+    scale1fbs["qcd_pt2400to3200"] = 4.08120692354e-06;
+    scale1fbs["qcd_pt3200toInf"] = 2.44009816733e-07;
+
+    // // 94x_v6
+    // scale1fbs["qcd_pt15to30"] = 91933.9666139;
+    // scale1fbs["qcd_pt30to50"] = 7686.58297702;
+    // scale1fbs["qcd_pt80to120"] = 159.646828642;
+    // scale1fbs["qcd_pt120to170"] = 17.5303225088;
+    // scale1fbs["qcd_pt170to300"] = 3.92828728604;
+    // scale1fbs["qcd_pt300to470"] = 0.679746626465;
+    // scale1fbs["qcd_pt1000to1400"] = 0.000845213629959;
+    // scale1fbs["qcd_pt1400to1800"] = 0.0001482163556;
+    // scale1fbs["qcd_pt2400to3200"] = 3.57483227132e-06;
 
     // //94x_v5
     // scale1fbs["qcd_pt15to30"] = 91933.9666139;
