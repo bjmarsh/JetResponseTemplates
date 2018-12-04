@@ -63,36 +63,36 @@ if [ ! -d "${COPYDIR}" ]; then
     mkdir -p ${COPYDIR}
 fi
 
-# # write configuration
+# write configuration
    
-# #Grid_Resource=gt2 osg-gw-6.t2.ucsd.edu:2119/jobmanager-condor
-# Grid_Resource="condor cmssubmit-r1.t2.ucsd.edu glidein-collector.t2.ucsd.edu"
-# echo "
-# universe=${UNIVERSE}
-# when_to_transfer_output = ON_EXIT
-# transfer_input_files=${INPUT}
-# +DESIRED_Sites=\"${SITE}\"
-# +remote_DESIRED_Sites=\"${SITE}\"
-# +Owner = undefined
-# log=${LOG}
-# output=${OUT}
-# error =${ERR}
-# notification=Never
-# x509userproxy=${PROXY}
-# " > ${CFGDIR}/condor_${COPYDIRBASE##*/}.cmd
+#Grid_Resource=gt2 osg-gw-6.t2.ucsd.edu:2119/jobmanager-condor
+Grid_Resource="condor cmssubmit-r1.t2.ucsd.edu glidein-collector.t2.ucsd.edu"
+echo "
+universe=${UNIVERSE}
+when_to_transfer_output = ON_EXIT
+transfer_input_files=${INPUT}
++DESIRED_Sites=\"${SITE}\"
++remote_DESIRED_Sites=\"${SITE}\"
++Owner = undefined
+log=${LOG}
+output=${OUT}
+error =${ERR}
+notification=Never
+x509userproxy=${PROXY}
+" > ${CFGDIR}/condor_${COPYDIRBASE##*/}.cmd
 
-#     #
-#     # now set the rest of the arguments 
-#     # for each job
-#     # 
+    #
+    # now set the rest of the arguments 
+    # for each job
+    # 
 
-#     for FILE in `./dis_client.py -t files --detail "${AODSAMPLE} | grep name"`; do
-#         echo "
-# executable=${EXE}
-# transfer_executable=True
-# arguments= `echo ${FILE##*/} | sed 's/\.root//g'` ${FILE} ${COPYDIR}
-# queue
-# " >> ${CFGDIR}/condor_${COPYDIRBASE##*/}.cmd
-#     done
+    for FILE in `./dis_client.py -t files --detail "${AODSAMPLE} | grep name"`; do
+        echo "
+executable=${EXE}
+transfer_executable=True
+arguments= `echo ${FILE##*/} | sed 's/\.root//g'` ${FILE} ${COPYDIR}
+queue
+" >> ${CFGDIR}/condor_${COPYDIRBASE##*/}.cmd
+    done
 
-# echo "[writeConfig] wrote condor_${COPYDIRBASE##*/}.cmd" 
+echo "[writeConfig] wrote condor_${COPYDIRBASE##*/}.cmd" 

@@ -27,9 +27,9 @@ echo "[wrapper] linux timestamp = " `date +%s`
 echo "[wrapper] extracting input sandbox"
 tar -zxf input.tar.gz
 
-export SCRAM_ARCH=slc6_amd64_gcc630
+export SCRAM_ARCH=slc6_amd64_gcc700
 source /cvmfs/cms.cern.ch/cmsset_default.sh
-cd CMSSW_9_4_7/src/JetResponseTemplates/JetResponseTemplates
+cd CMSSW_10_2_5/src/JetResponseTemplates/JetResponseTemplates
 echo "[wrapper] in directory: " ${PWD}
 echo "[wrapper] attempting to build"
 eval `scramv1 runtime -sh`
@@ -40,7 +40,7 @@ eval `scramv1 runtime -sh`
 echo "PATH: " $PATH
 echo "LD_LIBRARY_PATH: " $LD_LIBRARY_PATH
 
-ls ../../../bin/slc6_amd64_gcc530
+ls ../../../bin/slc6_amd64_gcc700
 
 cd test
 sed -i -- "s#PUTFILENAMEHERE#${FILE}#g" condor_template_cfg.py

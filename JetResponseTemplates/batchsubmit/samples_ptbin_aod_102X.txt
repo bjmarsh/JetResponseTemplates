@@ -1,0 +1,17 @@
+/QCD_Pt_15to30_TuneCP5_13TeV_pythia8/RunIIAutumn18DRPremix-102X_upgrade2018_realistic_v15_ext1-v2/AODSIM     qcd_pt15to30
+/QCD_Pt_30to50_TuneCP5_13TeV_pythia8/RunIIAutumn18DRPremix-102X_upgrade2018_realistic_v15-v1/AODSIM          qcd_pt30to50
+/QCD_Pt_50to80_TuneCP5_13TeV_pythia8/RunIIAutumn18DRPremix-102X_upgrade2018_realistic_v15-v1/AODSIM          qcd_pt50to80
+/QCD_Pt_50to80_TuneCP5_13TeV_pythia8/RunIIAutumn18DRPremix-102X_upgrade2018_realistic_v15_ext1-v2/AODSIM     qcd_pt50to80_ext1
+/QCD_Pt_80to120_TuneCP5_13TeV_pythia8/RunIIAutumn18DRPremix-102X_upgrade2018_realistic_v15-v1/AODSIM         qcd_pt80to120
+/QCD_Pt_120to170_TuneCP5_13TeV_pythia8/RunIIAutumn18DRPremix-102X_upgrade2018_realistic_v15-v1/AODSIM        qcd_pt120to170
+/QCD_Pt_170to300_TuneCP5_13TeV_pythia8/RunIIAutumn18DRPremix-102X_upgrade2018_realistic_v15-v1/AODSIM        qcd_pt170to300
+/QCD_Pt_300to470_TuneCP5_13TeV_pythia8/RunIIAutumn18DRPremix-102X_upgrade2018_realistic_v15-v1/AODSIM        qcd_pt300to470
+/QCD_Pt_470to600_TuneCP5_13TeV_pythia8/RunIIAutumn18DRPremix-102X_upgrade2018_realistic_v15-v1/AODSIM        qcd_pt470to600
+/QCD_Pt_800to1000_TuneCP5_13TeV_pythia8/RunIIAutumn18DRPremix-102X_upgrade2018_realistic_v15_ext1-v2/AODSIM  qcd_pt800to1000_ext1
+/QCD_Pt_1400to1800_TuneCP5_13TeV_pythia8/RunIIAutumn18DRPremix-102X_upgrade2018_realistic_v15-v1/AODSIM      qcd_pt1400to1800
+/QCD_Pt_1400to1800_TuneCP5_13TeV_pythia8/RunIIAutumn18DRPremix-102X_upgrade2018_realistic_v15_ext1-v2/AODSIM qcd_pt1400to1800_ext1
+/QCD_Pt_1800to2400_TuneCP5_13TeV_pythia8/RunIIAutumn18DRPremix-102X_upgrade2018_realistic_v15-v1/AODSIM      qcd_pt1800to2400
+/QCD_Pt_1800to2400_TuneCP5_13TeV_pythia8/RunIIAutumn18DRPremix-102X_upgrade2018_realistic_v15_ext1-v2/AODSIM qcd_pt1800to2400_ext1
+/QCD_Pt_2400to3200_TuneCP5_13TeV_pythia8/RunIIAutumn18DRPremix-102X_upgrade2018_realistic_v15_ext1-v2/AODSIM qcd_pt2400to3200_ext1
+/QCD_Pt_3200toInf_TuneCP5_13TeV_pythia8/RunIIAutumn18DRPremix-102X_upgrade2018_realistic_v15-v1/AODSIM       qcd_pt3200toInf
+/QCD_Pt_3200toInf_TuneCP5_13TeV_pythia8/RunIIAutumn18DRPremix-102X_upgrade2018_realistic_v15_ext2-v2/AODSIM  qcd_pt3200toInf_ext2
