@@ -5,10 +5,10 @@ import socket
 import time
 import sys
 
-tag = "94x_v7_newSamp_newJEC"
+tag = "102x_v1"
 
-submitJobs = True  # set to False if you've already submitted jobs and just want to monitor, or if you just want to check for missing files
-sweeprootExisting = False # set to False to skip sweeprooting on existing files. For if you just want to check for new cms4/resubmit
+submitJobs = False  # set to False if you've already submitted jobs and just want to monitor, or if you just want to check for missing files
+sweeprootExisting = True # set to False to skip sweeprooting on existing files. For if you just want to check for new cms4/resubmit
 removeLogs = False # remove all condor log files after successful completion
 
 def getCompletedFiles():
@@ -50,7 +50,7 @@ def watchCondorJobs(sweeprootWhileWaiting=False):
     print "* Waiting and watching..."
     NJOBS = 1
     while NJOBS > 0:
-        if "uaf-10" in socket.gethostname():
+        if "uaf-10blah" in socket.gethostname():
             out = subprocess.check_output(["condor_q", "bemarsh"]).split('\n')[-4].split(":")[1].strip()
             NJOBS = int(out.split()[0])
             nidle = int(out.split(";")[1].split(",")[2].strip().split()[0])

@@ -1,7 +1,7 @@
 #! /bin/bash
 
-INDIR=/nfs-7/userdata/bemarsh/JRTbabies/94x_v7_newSamp_newJEC
-HADOOP=/hadoop/cms/store/user/bemarsh/JRTbabies/94x_v7_newSamp_newJEC
+INDIR=/nfs-7/userdata/bemarsh/JRTbabies/102x_v1
+HADOOP=/hadoop/cms/store/user/bemarsh/JRTbabies/102x_v1
 
 mkdir -p logs
 

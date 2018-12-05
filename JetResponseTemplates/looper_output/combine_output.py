@@ -38,6 +38,13 @@ for ipt in range(n_pt_bins):
 
             fid.Close()
 
+h_lowsmear = r.TH2D("h_lowsmear", ";eta;phi", 120, -3, 3, 64, -3.2, 3.2)
+for f in files:
+    fid = r.TFile(f)
+    h = fid.Get("auxiliary/h_lowsmear")
+    h_lowsmear.Add(h)
+    fid.Close()
+
 fout = r.TFile("combined.root","RECREATE")
 for ipt in range(n_pt_bins):
     ptdir = fout.mkdir("pt{0}".format(ipt))
@@ -54,4 +61,8 @@ for ipt in range(n_pt_bins):
         hs[ipt][ieta][1].Write()
         hs[ipt][ieta][2].Write()
         
+auxdir = fout.mkdir("auxiliary")
+auxdir.cd()
+h_lowsmear.Write()
+
 fout.Close()

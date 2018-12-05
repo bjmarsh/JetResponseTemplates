@@ -30,47 +30,60 @@ double getBtagEffFromHist(float pt, float eta, BTagEntry::JetFlavor flavor, TH2D
 std::map<string,float> scale1fbs;
 
 // manual veto windows for dead ecal cells
-const uint NDEADCELLS = 17;
+const uint NDEADCELLS = 18;
 float dead_cell_boundaries[NDEADCELLS][4] = {
-    {-2.4,-1.6,-2.15,-1.3},
-    {-2.15,-2.6,-1.95,-2.35},
-    {-1.65,0.5,-1.5,0.7},
-    {-1.35,-2.75,-1.25,-2.6},
-    {-1.3,0.5,-1.2,0.6},
-    {-1.15,0.5,-1.05,0.6},
-    {-0.4,0.1,-0.2,0.3},
-    {-1.0,2.9,-0.85,3.1},
-    {0.85,2.8,1.0,2.9},
-    {0.25,-0.8,0.35,-0.7},
-    {0.6,-0.8,0.7,-0.7},
-    {0.95,-0.8,1.05,-0.7},
-    {1.35,-2.65,1.45,-2.5},
-    {1.65,0.7,1.85,0.95},
-    {1.65,-0.7,1.8,-0.5},
-    {1.5,-1.6,1.65,-1.4},
-    {1.7,-2.2,1.9,-1.95}
+    {-2.40,-1.60,-2.15,-1.30},
+    {-2.15,-2.60,-1.95,-2.35},
+    {-1.65, 0.50,-1.50, 0.70},
+    {-1.35,-2.75,-1.25,-2.60},
+    {-1.30, 0.50,-1.20, 0.60},
+    {-1.15, 0.50,-1.05, 0.60},
+    {-0.40, 0.10,-0.20, 0.30},
+    {-1.00, 2.90,-0.85, 3.10},
+    { 0.85, 2.80, 1.00, 2.90},
+    { 0.25,-0.80, 0.35,-0.70},
+    { 0.60,-0.80, 0.70,-0.70},
+    { 0.95,-0.80, 1.05,-0.70},
+    { 1.35,-2.65, 1.45,-2.50},
+    { 1.65, 0.70, 1.85, 0.95},
+    { 1.65,-0.70, 1.80,-0.50},
+    { 1.50,-1.60, 1.65,-1.40},
+    { 1.70,-2.20, 1.90,-1.95},
+    {-1.55, 2.60,-1.35, 2.70}
 };
-
 
 int main(int argc, char* argv[]) 
 {
+    //102x_v1
+    // scale1fbs["qcd_pt15to30"] = 2796666.66667;
+    scale1fbs["qcd_pt15to30"] = 100000;
+    scale1fbs["qcd_pt50to80"] = 879.193937704;
+    scale1fbs["qcd_pt120to170"] = 18.594173886;
+    scale1fbs["qcd_pt170to300"] = 3.9526323144;
+    scale1fbs["qcd_pt300to470"] = 0.185630324103;
+    scale1fbs["qcd_pt470to600"] = 0.0365600006182;
+    scale1fbs["qcd_pt800to1000"] = 0.00103135474272;
+    scale1fbs["qcd_pt1400to1800"] = 0.000122194025522;
+    scale1fbs["qcd_pt1800to2400"] = 2.8424002645e-05;
+    scale1fbs["qcd_pt2400to3200"] = 7.34388172043e-06;
+    scale1fbs["qcd_pt3200toInf"] = 1.32356e-06;
 
-    //94x_v7
-    scale1fbs["qcd_pt15to30"] = 128064.471545;
-    scale1fbs["qcd_pt30to50"] = 6507.24684523;
-    scale1fbs["qcd_pt50to80"] = 646.963449494;
-    scale1fbs["qcd_pt80to120"] = 98.7252519477;
-    scale1fbs["qcd_pt120to170"] = 15.7939188283;
-    scale1fbs["qcd_pt170to300"] = 3.98165497185;
-    scale1fbs["qcd_pt300to470"] = 0.139888005195;
-    scale1fbs["qcd_pt470to600"] = 0.0232284124839;
-    scale1fbs["qcd_pt600to800"] = 0.0445715373174;
-    scale1fbs["qcd_pt800to1000"] = 0.000437625623577;
-    scale1fbs["qcd_pt1000to1400"] = 0.000582347121746;
-    scale1fbs["qcd_pt1400to1800"] = 0.0589843203136;
-    scale1fbs["qcd_pt1800to2400"] = 4.23969161051e-05;
-    scale1fbs["qcd_pt2400to3200"] = 4.08120692354e-06;
-    scale1fbs["qcd_pt3200toInf"] = 2.44009816733e-07;
+    // //94x_v7
+    // scale1fbs["qcd_pt15to30"] = 128064.471545;
+    // scale1fbs["qcd_pt30to50"] = 6507.24684523;
+    // scale1fbs["qcd_pt50to80"] = 646.963449494;
+    // scale1fbs["qcd_pt80to120"] = 98.7252519477;
+    // scale1fbs["qcd_pt120to170"] = 15.7939188283;
+    // scale1fbs["qcd_pt170to300"] = 3.98165497185;
+    // scale1fbs["qcd_pt300to470"] = 0.139888005195;
+    // scale1fbs["qcd_pt470to600"] = 0.0232284124839;
+    // scale1fbs["qcd_pt600to800"] = 0.0445715373174;
+    // scale1fbs["qcd_pt800to1000"] = 0.000437625623577;
+    // scale1fbs["qcd_pt1000to1400"] = 0.000582347121746;
+    // scale1fbs["qcd_pt1400to1800"] = 0.0589843203136;
+    // scale1fbs["qcd_pt1800to2400"] = 4.23969161051e-05;
+    // scale1fbs["qcd_pt2400to3200"] = 4.08120692354e-06;
+    // scale1fbs["qcd_pt3200toInf"] = 2.44009816733e-07;
 
     // // 94x_v6
     // scale1fbs["qcd_pt15to30"] = 91933.9666139;
@@ -166,7 +179,8 @@ int main(int argc, char* argv[])
     // setup histograms
     TH1D* h_pileup = new TH1D("h_pileup",";n vertices",100,0,100);
     TH1D* h_dr = new TH1D("h_dr",";dR(reco,gen)",100,0,0.5);
-    
+    TH2D* h_lowsmear = new TH2D("h_lowsmear",";eta;phi",120,-3,3,64,-3.2,3.2);
+
     vector< vector<TH1D*>* > *JRTs_b = new vector< vector<TH1D*>* >;
     vector< vector<TH1D*>* > *JRTs_l = new vector< vector<TH1D*>* >;
     vector< vector<TH1D*>* > *JRTs_a = new vector< vector<TH1D*>* >;
@@ -351,10 +365,12 @@ int main(int argc, char* argv[])
                 // }
 
                 if(pt_bin>=8 && eta_bin<=11 && ratio <= 0.5){
-                    cout << "[JRTlooper]  low smear event: " << t.evt_run << ":" << t.evt_lumi << ":" << t.evt_event << " " << 
-                        t.Flag_badMuonFilter2016 << " " << t.Flag_badMuonFilter2016_loose << " " << t.Flag_badChargedCandidateFilter2016 << " " << ratio << " " << 
-                        t.recojet_leadingPFCandId->at(irj) << " " << (int)t.recojet_muFrac->at(irj) << " " << (int)t.genjet_muFrac->at(igj) << 
-                        " " << t.genjet_pt->at(igj) << " " << t.genjet_eta->at(igj) << " " << t.genjet_phi->at(igj) << endl;
+                    // cout << "[JRTlooper]  low smear event: " << t.evt_run << ":" << t.evt_lumi << ":" << t.evt_event << " " << 
+                    //     t.Flag_badMuonFilter2016 << " " << t.Flag_badMuonFilter2016_loose << " " << t.Flag_badChargedCandidateFilter2016 << " " << ratio << " " << 
+                    //     t.recojet_leadingPFCandId->at(irj) << " " << (int)t.recojet_muFrac->at(irj) << " " << (int)t.genjet_muFrac->at(igj) << 
+                    //     " " << t.genjet_pt->at(igj) << " " << t.genjet_eta->at(igj) << " " << t.genjet_phi->at(igj) << endl;
+                    
+                    h_lowsmear->Fill(t.genjet_eta->at(igj), t.genjet_phi->at(igj));
                 }
 
                 // // use gen-level flavor
@@ -409,6 +425,7 @@ int main(int argc, char* argv[])
     d_aux->cd();
     h_pileup->Write();
     h_dr->Write();
+    h_lowsmear->Write();
 
     vector<TDirectory*>*            pt_dirs  = new vector<TDirectory*>;
     vector< vector<TDirectory*>* >* eta_dirs = new vector< vector<TDirectory*>* >;
